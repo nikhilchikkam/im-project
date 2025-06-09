@@ -1,0 +1,12 @@
+# Ignore large data & env
+results/
+.env
+**/__pycache__/
+**/*.pyc
+
+# Node & Python junk
+node_modules/
+*.log
+build/
+dist/
+.env.local
