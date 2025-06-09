@@ -1,12 +1,31 @@
-# Ignore large data & env
-results/
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
 .env
-**/__pycache__/
-**/*.pyc
+.env.*
 
-# Node & Python junk
+# === Node/React ===
 node_modules/
-*.log
 build/
 dist/
-.env.local
+*.log
+
+# === Data ===
+results/
+*.sqlite3
+*.db
+*.csv
+*.json
+
+# === Editor Settings ===
+.idea/              # PyCharm
+.vscode/            # VS Code
+*.code-workspace
+
+# === OS/System Files ===
+.DS_Store
+Thumbs.db
+".idea/" 
