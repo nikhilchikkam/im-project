@@ -10,12 +10,17 @@ client = Content1Client()
 
 # Config
 BATCH_SIZE = 1000
-ITEMS_PER_FILE = 100_000
+ITEMS_PER_FILE = 10_000
+OUTPUT_DIR = "results/products2"
+
+# Ensure output directory exists
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Criteria: fetch everything
 criteria = {
     "targetMarket": "US",
-    "pullHierarchy": True,
+    "pullHierarchy": False,
+    "isConsumerUnit": True,
     "sortFields": [
         {"field": "lastModifiedDate", "desc": True},
         {"field": "gtin", "desc": False}
@@ -35,21 +40,18 @@ def fetch_all_products_batched():
     total = client.count_products(criteria)
     print(f"Total products: {total}")
 
-    all_items = []
     search_after = None
     file_index = 1
     total_fetched = 0
 
     while total_fetched < total:
-        # If we already wrote this batch, skip (resumable fetch)
-        file_name = f"products_batch_{file_index}.json"
+        file_name = os.path.join(OUTPUT_DIR, f"products_batch_{file_index}.json")
         if os.path.exists(file_name):
             print(f"{file_name} already exists. Skipping...")
             total_fetched += ITEMS_PER_FILE
             file_index += 1
             continue
 
-        # Fetch up to ITEMS_PER_FILE
         batch_items = []
         while len(batch_items) < ITEMS_PER_FILE and total_fetched < total:
             if search_after:
@@ -65,7 +67,6 @@ def fetch_all_products_batched():
                 break
             search_after = result["searchAfter"]
 
-        # Write this batch to file
         with open(file_name, "w", encoding="utf-8") as f:
             json.dump(batch_items, f, indent=2, ensure_ascii=False)
         print(f"Saved {len(batch_items)} items to {file_name}")
