@@ -65,8 +65,8 @@ export const PricingSection = () => {
   return (
     <section className="max-w-7xl mx-auto px-4 py-16">
       <h2 className="text-3xl font-bold text-center mb-2">Pricing</h2>
-      <p className="text-center text-gray-600 max-w-xl mx-auto mb-8">
-        We offer a range of plans. Choose based on your needs. You can downgrade or upgrade your plan later.
+      <p className="text-center text-gray-500 max-w-xl mx-auto mb-8">
+        Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian mechanics
       </p>
 
       <PricingToggle billing={billing} onChange={setBilling} />

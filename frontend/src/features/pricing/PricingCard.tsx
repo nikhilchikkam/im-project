@@ -1,3 +1,7 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Check, X } from 'lucide-react';
+
 type PricingCardProps = {
   title: string;
   subtitle: string;
@@ -13,29 +17,36 @@ export const PricingCard = ({
   price,
   period,
   features,
-  highlight = false,
+  highlight,
 }: PricingCardProps) => {
+  const cardClasses = `
+    border rounded-lg p-8 flex flex-col h-full
+    ${highlight ? 'border-blue-500' : 'border-gray-300'}
+  `;
+
   return (
-    <div className={`rounded-xl p-6 shadow-sm border ${highlight ? 'bg-blue-50' : 'bg-white'}`}>
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="text-sm text-gray-500 mb-4">{subtitle}</p>
-      <div className="text-3xl font-bold mb-2">{price}</div>
-      <div className="text-sm text-gray-500 mb-4">{period}</div>
-
-      <ul className="space-y-2 mb-6">
-        {features.map((f, idx) => (
-          <li key={idx} className="flex items-center gap-2 text-sm">
-            <span className={f.included ? 'text-green-600' : 'text-red-500'}>
-              {f.included ? '✔' : '✘'}
-            </span>
-            {f.text}
-          </li>
-        ))}
-      </ul>
-
-      <button className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+    <div className={cardClasses}>
+      <div className="flex-grow">
+        <h3 className="text-xl font-bold text-center mb-2">{title}</h3>
+        <p className="text-center text-gray-500 mb-6">{subtitle}</p>
+        <p className="text-4xl font-bold text-center mb-1">{price}</p>
+        <p className="text-center text-blue-500 font-semibold mb-8">{period}</p>
+        <ul className="space-y-4">
+          {features.map((feature, i) => (
+            <li key={i} className="flex items-center gap-3">
+              {feature.included ? (
+                <Check className="w-5 h-5 text-green-500" />
+              ) : (
+                <X className="w-5 h-5 text-red-500" />
+              )}
+              <span>{feature.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <Link to="/subscription" className="w-full mt-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 text-center">
         Get it now
-      </button>
+      </Link>
     </div>
   );
 };

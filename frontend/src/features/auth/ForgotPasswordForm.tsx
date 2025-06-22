@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Input } from '../../components/Input';
-import { Button } from '../../components/Button';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
 
 
 export const ForgotPasswordForm = () => {

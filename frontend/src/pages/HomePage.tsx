@@ -1,8 +1,8 @@
-import NavbarAfter from '../components/NavbarAfter';
-import { useState, useRef } from 'react';
+import NavbarAfter from '../components/navigation/NavbarAfter';
+import { useState, useRef, useEffect } from 'react';
 import { X, Filter } from 'lucide-react';
-import ProductCard from '../components/ProductCard';
-import ProductTable from '../components/ProductTable';
+import ProductCard from '../components/product/ProductCard';
+import ProductTable from '../components/product/ProductTable';
 import { List, LayoutGrid } from 'lucide-react';
 import ProductDetailsModal from '../features/products/ProductDetailsModal';
 
@@ -35,21 +35,57 @@ const categories = [
   'Vegetables (Non Leaf) - Unprepared/Unprocessed (Fresh)',
 ];
 
-const mockProducts = Array.from({ length: 6 }).map((_, i) => ({
-  id: `${i}`,
-  upc: '070038365266',
-  title: 'Chex Mix Savory Snack Mix Traditional',
-  category: i % 2 === 0 ? 'Produce' : 'Meat',
-  description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-  itemNumber: '9090909090',
-  name: 'Chex Mix',
-}));
+const DEFAULT_LIMIT = 12;
 
 const HomePage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'card' | 'list'>('card');
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_LIMIT);
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        if (selectedCategories.length > 0 && !selectedCategories.includes('All Categories')) {
+          selectedCategories.forEach(cat => params.append('family_title', cat));
+        }
+        if (searchTerm) {
+          params.append('search_term', searchTerm);
+        }
+        params.append('limit', limit.toString());
+        params.append('offset', ((page - 1) * limit).toString());
+        const res = await fetch(`/api/products?${params.toString()}`);
+        if (!res.ok) throw new Error('Failed to fetch products');
+        const data = await res.json();
+        setProducts(data);
+      } catch (err: any) {
+        setError(err.message || 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [selectedCategories, searchTerm, page, limit]);
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setPage(1); // Optionally reset to first page on new search
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
 
   const handleCategoryChange = (cat: string) => {
     setSelectedCategories((prev) =>
@@ -57,6 +93,12 @@ const HomePage = () => {
         ? prev.filter((c) => c !== cat)
         : [...prev, cat]
     );
+    setPage(1);
+  };
+
+  const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLimit(Number(e.target.value));
+    setPage(1);
   };
 
   // Close dropdown on click outside
@@ -64,15 +106,18 @@ const HomePage = () => {
 
   // Modular renderers
   const renderResults = () => {
+    if (loading) return <div className="text-center py-8">Loading...</div>;
+    if (error) return <div className="text-center text-red-500 py-8">{error}</div>;
+    if (products.length === 0) return <div className="text-center py-8">No products found.</div>;
     if (viewType === 'card') {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-4">
-          {mockProducts.map((p) => (
+          {products.map((p) => (
             <ProductCard
-              key={p.id}
-              upc={p.upc}
-              title={p.title}
-              category={p.category}
+              key={p.gtin}
+              upc={p.gtin}
+              title={p.name || p.title}
+              category={p.family_title || ''}
               description={p.description}
               onEnlarge={() => setSelectedProduct(p)}
             />
@@ -82,16 +127,20 @@ const HomePage = () => {
     }
     return (
       <div className="mt-4">
-        <ProductTable products={mockProducts.map(p => ({
-          id: p.id,
-          category: p.category,
-          itemNumber: p.itemNumber,
-          name: p.name,
+        <ProductTable products={products.map(p => ({
+          id: p.gtin,
+          category: p.family_title || '',
+          itemNumber: p.gtin,
+          name: p.name || p.title,
           description: p.description,
         }))} />
       </div>
     );
   };
+
+  // Pagination controls
+  const handlePrevPage = () => setPage((p) => Math.max(1, p - 1));
+  const handleNextPage = () => setPage((p) => p + 1);
 
   return (
     <div className="min-h-screen bg-white">
@@ -101,7 +150,7 @@ const HomePage = () => {
         <div className="flex items-center justify-center gap-8 mb-8">
           {/* Left image */}
           <img
-            src="https://i.imgur.com/4QfKuz1.png" // Placeholder Coco Pops
+            src="https://i.imgur.com/4QfKuz1.png"
             alt="Coco Pops"
             className="w-48 h-48 object-contain -rotate-15"
             style={{ transform: 'rotate(-15deg)' }}
@@ -112,7 +161,7 @@ const HomePage = () => {
           </h1>
           {/* Right image */}
           <img
-            src="https://i.imgur.com/4QfKuz1.png" // Placeholder Ginger Beer
+            src="https://i.imgur.com/4QfKuz1.png"
             alt="Ginger Beer"
             className="w-40 h-48 object-contain rotate-15"
             style={{ transform: 'rotate(15deg)' }}
@@ -127,10 +176,15 @@ const HomePage = () => {
               <X className="w-5 h-5 ml-2 cursor-pointer" />
             </div>
             {/* Product Keywords pill */}
-            <div className="flex items-center bg-[#eaeaea] rounded-xl px-6 py-3 text-lg text-gray-400 font-medium mr-2 min-w-[220px]">
-              <span className="flex-1">Product Keywords</span>
-              <X className="w-5 h-5 ml-2 cursor-pointer" />
-            </div>
+            <form className="flex items-center bg-[#eaeaea] rounded-xl px-6 py-3 text-lg text-gray-400 font-medium mr-2 min-w-[220px]">
+              <input
+                type="text"
+                placeholder="Product Keywords"
+                className="bg-transparent outline-none flex-1"
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+              />
+            </form>
             {/* Category pill */}
             <div className="flex items-center bg-[#eaeaea] rounded-xl px-6 py-3 text-lg text-gray-400 font-medium mr-2 min-w-[220px]">
               <span className="flex-1">Select Category</span>
@@ -193,34 +247,25 @@ const HomePage = () => {
               </div>
             </>
           )}
-          {/* Search Button */}
-          <button className="w-[500px] max-w-full bg-[#007aff] text-white py-4 rounded-xl text-lg font-semibold shadow hover:bg-blue-700 transition">
-            Search selection
-          </button>
         </div>
       </section>
       {/* Results Section */}
       <section className="max-w-6xl mx-auto px-4 pb-12">
-        <div className="text-lg font-medium mb-4 mt-2">Search results for: Chex Mex</div>
+        <div className="text-lg font-medium mb-4 mt-2">Search results</div>
         {renderResults()}
         {/* Pagination */}
         <div className="flex items-center justify-between mt-8 text-gray-500 text-sm">
           <div>
-            <button className="px-2 py-1 rounded hover:bg-gray-100">&lt; Previous</button>
-            <span className="mx-2 font-semibold text-black">1</span>
-            <button className="px-2 py-1 rounded hover:bg-gray-100">2</button>
-            <button className="px-2 py-1 rounded hover:bg-gray-100">3</button>
-            <button className="px-2 py-1 rounded hover:bg-gray-100">4</button>
-            <button className="px-2 py-1 rounded hover:bg-gray-100">5</button>
-            <span className="mx-2">...</span>
-            <button className="px-2 py-1 rounded hover:bg-gray-100">Next &gt;</button>
+            <button className="px-2 py-1 rounded hover:bg-gray-100" onClick={handlePrevPage} disabled={page === 1}>&lt; Previous</button>
+            <span className="mx-2 font-semibold text-black">{page}</span>
+            <button className="px-2 py-1 rounded hover:bg-gray-100" onClick={handleNextPage}>Next &gt;</button>
           </div>
           <div>
             Products per Page
-            <select className="ml-2 border rounded px-2 py-1">
-              <option>49</option>
-              <option>24</option>
-              <option>12</option>
+            <select className="ml-2 border rounded px-2 py-1" value={limit} onChange={handleLimitChange}>
+              <option value={49}>49</option>
+              <option value={24}>24</option>
+              <option value={12}>12</option>
             </select>
           </div>
         </div>

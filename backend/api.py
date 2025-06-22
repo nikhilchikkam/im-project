@@ -1,0 +1,135 @@
+import os
+from fastapi import FastAPI, Depends, HTTPException, Query
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker, Session
+from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
+
+load_dotenv(dotenv_path="db scripts/.env")
+
+# Database connection
+DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+app = FastAPI()
+
+# CORS middleware to allow requests from the frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Adjust this to your frontend's address
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Dependency to get the database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.get("/api/products")
+def get_products(db: Session = Depends(get_db), class_title: str = None, family_title: list[str] = Query(None), search_term: str = None, limit: int = 12, offset: int = 0):
+    """
+    Fetch products from the database.
+    This endpoint retrieves a list of all products, optionally filtered by class_title, family_title (multi), and a search term, with pagination support.
+    """
+    try:
+        base_query = "SELECT gtin, name, description, brand, product_type, gpc_code, class_title, family_title FROM products"
+        conditions = []
+        params = {}
+
+        if class_title:
+            conditions.append("class_title = :class_title")
+            params['class_title'] = class_title
+        if family_title:
+            conditions.append(f"family_title IN :family_titles")
+            params['family_titles'] = tuple(family_title)
+        if search_term:
+            conditions.append("name ILIKE :search_term")
+            params['search_term'] = f"%{search_term}%"
+
+        if conditions:
+            base_query += " WHERE " + " AND ".join(conditions)
+        base_query += " ORDER BY name ASC LIMIT :limit OFFSET :offset"
+        params['limit'] = limit
+        params['offset'] = offset
+        query = text(base_query)
+
+        products_result = db.execute(query, params).fetchall()
+        return [
+            {"gtin": p.gtin, "name": p.name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title}
+            for p in products_result
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/products/{gtin}")
+def get_product_details(gtin: str, db: Session = Depends(get_db)):
+    """
+    Fetch detailed information for a single product, including nutrition facts.
+    """
+    try:
+        product_query = text("SELECT gtin, name, description, ingredients, brand, product_type, gpc_code, class_title, family_title FROM products WHERE gtin = :gtin")
+        product = db.execute(product_query, {"gtin": gtin}).fetchone()
+
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        nutrition_query = text("""
+            SELECT nutrient_code, nutrient_label, value, unit
+            FROM product_nutrition
+            WHERE gtin = :gtin
+        """)
+        nutrition_info_result = db.execute(nutrition_query, {"gtin": gtin}).fetchall()
+
+        product_dict = dict(product._mapping)
+        product_dict['nutrition'] = [dict(n._mapping) for n in nutrition_info_result]
+
+        return product_dict
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/nutrition/{gtin}")
+def get_product_nutrition(gtin: str, db: Session = Depends(get_db)):
+    """
+    Fetch nutrition facts and serving information for a single product.
+    """
+    try:
+        # Fetch nutrition details
+        nutrition_query = text("""
+            SELECT nutrient_code, nutrient_label, value, unit
+            FROM product_nutrition
+            WHERE gtin = :gtin
+        """)
+        nutrition_info_result = db.execute(nutrition_query, {"gtin": gtin}).fetchall()
+
+        # Fetch serving information
+        serving_query = text("""
+            SELECT serving_size_value, serving_size_unit, serving_description, 
+                   basis_quantity_value, basis_quantity_unit, basis_quantity_type
+            FROM serving
+            WHERE gtin = :gtin
+        """)
+        serving_info = db.execute(serving_query, {"gtin": gtin}).fetchone()
+
+        if not nutrition_info_result and not serving_info:
+            raise HTTPException(status_code=404, detail="Nutrition and serving information not found for this product")
+
+        return {
+            "serving_info": dict(serving_info._mapping) if serving_info else None,
+            "nutrients": [dict(n._mapping) for n in nutrition_info_result]
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True) 

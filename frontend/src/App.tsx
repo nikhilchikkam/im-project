@@ -1,20 +1,21 @@
 // src/App.tsx
 import { Routes, Route } from 'react-router-dom';
-import AuthLandingPage from './pages/AuthLandingPage';
-import LoginPage from './pages/LoginPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ProductsPage from './pages/LandingPage';
-import PricingPage from './pages/PricingPage';
-import ResourcesPage from './pages/ResourcesPage';
-import ContactPage from './pages/ContactPage';
+import AuthLandingPage from './pages/auth/AuthLandingPage';
+import LoginPage from './pages/auth/LoginPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import PricingPage from './pages/info/PricingPage';
+import ResourcesPage from './pages/info/ResourcesPage';
+import ContactPage from './pages/info/ContactPage';
 import LandingPage from './pages/LandingPage';
-import SignupPage from './pages/SignupPage';
+import SignupPage from './pages/auth/SignupPage';
 import HomePage from './pages/HomePage';
-import WishlistPage from './pages/WishlistPage';
-import WishlistDetailPage from './pages/WishlistDetailPage';
-import CartPage from './pages/CartPage';
-import UserProfilePage from './pages/UserProfilePage';
-// import SignupPage from './pages/SignupPage'; // Enable when needed
+import WishlistPage from './pages/wishlist/WishlistPage';
+import WishlistDetailPage from './pages/wishlist/WishlistDetailPage';
+import CartPage from './pages/cart/CartPage';
+import UserProfilePage from './pages/profile/UserProfilePage';
+import CartDetailPage from './pages/cart/CartDetailPage';
+import CorporateProfilePage from './pages/profile/CorporateProfilePage';
+import SubscriptionPage from './pages/checkout/SubscriptionPage';
 
 const App = () => {
   return (
@@ -30,7 +31,6 @@ const App = () => {
       <Route path="/signup" element={<SignupPage />} />
 
       
-      <Route path="/products" element={<ProductsPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/resources" element={<ResourcesPage />} />
       <Route path="/contact" element={<ContactPage />} />
@@ -39,7 +39,10 @@ const App = () => {
       <Route path="/wishlist" element={<WishlistPage />} />
       <Route path="/wishlist/:id" element={<WishlistDetailPage />} />
       <Route path="/cart" element={<CartPage />} />
+      <Route path="/cart/detail" element={<CartDetailPage />} />
       <Route path="/profile" element={<UserProfilePage />} />
+      <Route path="/profile/corporate" element={<CorporateProfilePage />} />
+      <Route path="/subscription" element={<SubscriptionPage />} />
     </Routes>
   );
 };

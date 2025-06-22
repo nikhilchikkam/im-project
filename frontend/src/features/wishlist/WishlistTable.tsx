@@ -1,4 +1,7 @@
 import React from 'react';
+import DataTable from '../../components/ui/DataTable';
+import type { RowAction, DataItem } from '../../components/ui/DataTable';
+import { ListPlus, MoreHorizontal } from 'lucide-react';
 
 type WishlistItem = {
   id: string;
@@ -9,49 +12,50 @@ type WishlistItem = {
 };
 
 type WishlistTableProps = {
-  items: WishlistItem[];
+  items: DataItem[];
   selectedItems: string[];
   onSelect: (id: string) => void;
   onSelectAll: (checked: boolean) => void;
-  onDelete: (id: string) => void;
+  onAddToList: (id: string) => void;
+  onMoreOptions: (id:string) => void;
 };
 
-const WishlistTable: React.FC<WishlistTableProps> = ({ items, selectedItems, onSelect, onSelectAll, onDelete }) => {
-  const allSelected = items.length > 0 && selectedItems.length === items.length;
+const WishlistTable: React.FC<WishlistTableProps> = ({ items, selectedItems, onSelect, onSelectAll, onAddToList, onMoreOptions }) => {
+  // Wishlist-specific secondary action (move to cart)
+  const handleMoveToCart = (id: string) => {
+    console.log('Move to cart:', id);
+  };
+
+  const cartIcon = (
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+    </svg>
+  );
+
+  const wishlistRowActions: RowAction[] = [
+    {
+      icon: <ListPlus className="w-5 h-5" />,
+      onClick: onAddToList,
+      className: "text-gray-400 hover:text-blue-600 p-1 rounded",
+      ariaLabel: "Add to another list",
+    },
+    {
+      icon: <MoreHorizontal className="w-5 h-5" />,
+      onClick: onMoreOptions,
+      className: "text-gray-400 hover:text-gray-600 p-1 rounded",
+      ariaLabel: "More options",
+    }
+  ];
+
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <table className="min-w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50">
-            <th className="px-4 py-2"><input type="checkbox" checked={allSelected} onChange={e => onSelectAll(e.target.checked)} /></th>
-            <th className="px-4 py-2 text-left">Category</th>
-            <th className="px-4 py-2 text-left">Item Number</th>
-            <th className="px-4 py-2 text-left">Product</th>
-            <th className="px-4 py-2 text-left">Description</th>
-            <th className="px-4 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map(item => (
-            <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-blue-50' : ''}>
-              <td className="px-4 py-2"><input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => onSelect(item.id)} /></td>
-              <td className="px-4 py-2"><span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">• {item.category}</span></td>
-              <td className="px-4 py-2">{item.itemNumber}</td>
-              <td className="px-4 py-2">{item.product}</td>
-              <td className="px-4 py-2">{item.description}</td>
-              <td className="px-4 py-2 flex gap-2 justify-end">
-                <button className="text-blue-600 hover:bg-blue-100 p-1 rounded" onClick={() => onDelete(item.id)}>
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-                <button className="text-gray-500 hover:bg-gray-100 p-1 rounded">
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      items={items}
+      selectedItems={selectedItems}
+      onSelect={onSelect}
+      onSelectAll={onSelectAll}
+      rowActions={wishlistRowActions}
+      tableTitle="Wishlist Items"
+    />
   );
 };
 

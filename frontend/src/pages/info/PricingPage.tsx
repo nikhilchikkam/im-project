@@ -1,0 +1,13 @@
+import { PricingSection } from '../../features/pricing/PricingSection';
+import NavbarBefore from '../../components/navigation/NavbarBefore';
+
+const PricingPage = () => {
+  return (
+    <div className="min-h-screen bg-white">
+      <NavbarBefore />
+      <PricingSection />
+    </div>
+  );
+};
+
+export default PricingPage;

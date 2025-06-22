@@ -1,22 +1,36 @@
-type Props = {
+import React from 'react';
+
+type PricingToggleProps = {
   billing: 'monthly' | 'yearly';
-  onChange: (val: 'monthly' | 'yearly') => void;
+  onChange: (billing: 'monthly' | 'yearly') => void;
 };
 
-export const PricingToggle = ({ billing, onChange }: Props) => {
+export const PricingToggle = ({ billing, onChange }: PricingToggleProps) => {
+  const isYearly = billing === 'yearly';
+  
+  const toggle = () => {
+    onChange(isYearly ? 'monthly' : 'yearly');
+  };
+
   return (
-    <div className="flex items-center gap-2 mb-6 justify-center">
+    <div className="flex items-center justify-center gap-4 mb-8">
       <span>Monthly</span>
       <button
-        className={`w-14 h-7 rounded-full p-1 transition bg-gray-200 flex ${
-          billing === 'yearly' ? 'justify-end' : 'justify-start'
+        onClick={toggle}
+        className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
+          isYearly ? 'bg-blue-600' : 'bg-gray-200'
         }`}
-        onClick={() => onChange(billing === 'monthly' ? 'yearly' : 'monthly')}
       >
-        <div className="w-5 h-5 bg-white rounded-full shadow" />
+        <span
+          className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+            isYearly ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
       </button>
       <span>Yearly</span>
-      <span className="text-xs text-blue-600 ml-2">Save 25%</span>
+      <span className="bg-blue-600 text-white text-sm font-semibold px-3 py-1 rounded-full">
+        Save 25%
+      </span>
     </div>
   );
 };

@@ -27,6 +27,7 @@ criteria = {
     ]
 }
 
+
 def fetch_with_retry(criteria, page_size, retries=3, delay=5):
     for attempt in range(retries):
         try:
@@ -35,6 +36,7 @@ def fetch_with_retry(criteria, page_size, retries=3, delay=5):
             print(f"Attempt {attempt + 1} failed: {e}")
             time.sleep(delay)
     raise Exception("Failed after multiple retries.")
+
 
 def fetch_all_products_batched():
     total = client.count_products(criteria)

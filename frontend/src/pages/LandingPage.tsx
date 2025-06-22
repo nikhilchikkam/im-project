@@ -1,5 +1,5 @@
 // import { Link } from 'react-router-dom';
-import NavbarBefore from '../components/NavbarBefore';
+import NavbarBefore from '../components/navigation/NavbarBefore';
 import { PricingSection } from '../features/pricing/PricingSection';
 
 const LandingPage = () => {
@@ -37,7 +37,7 @@ const LandingPage = () => {
       <section className="px-6 py-16 max-w-6xl mx-auto text-center">
         <h2 className="text-2xl font-semibold mb-4">Quicker analysis</h2>
         <p className="text-gray-600 mb-10">
-          Comparing doesn’t have to be hard. We offer a range of USDA-approved guidelines to compare
+          Comparing doesn't have to be hard. We offer a range of USDA-approved guidelines to compare
           the food products against.
         </p>
         <img src="comparison.png" alt="Product Comparison" className="mx-auto mb-16" />
