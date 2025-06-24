@@ -68,7 +68,7 @@ const HomePage = () => {
         const res = await fetch(`/api/products?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch products');
         const data = await res.json();
-        setProducts(data);
+        setProducts(data.products || []);
       } catch (err: any) {
         setError(err.message || 'Unknown error');
       } finally {

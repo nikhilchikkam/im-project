@@ -1,3 +1,5 @@
+import json
+
 def extract_nutrition(item):
     gtin = item.get("gtin")
     rows = []
@@ -56,4 +58,35 @@ def insert_nutrition(cur, nutrition_rows):
             n["nutrient_label"],
             n["value"],
             n["unit"]
+        ))
+
+
+def extract_daily_value_intake_percent(item):
+    gtin = item.get("gtin")
+    rows = []
+    nutrient_info = next((n for n in item.get("nutrientInformation", [])), None)
+    if not nutrient_info:
+        return rows
+    for detail in nutrient_info.get("nutrientDetail", []):
+        code = detail.get("nutrientTypeCode")
+        daily_value = detail.get("dailyValueIntakePercent")
+        if code and daily_value is not None:
+            rows.append({
+                "gtin": gtin,
+                "nutrient_code": code,
+                "daily_value_intake_percent": str(daily_value)
+            })
+    return rows
+
+
+def insert_daily_value_intake_percent(cur, rows):
+    for n in rows:
+        cur.execute("""
+            UPDATE product_nutrition
+            SET daily_value_intake_percent = %s
+            WHERE gtin = %s AND nutrient_code = %s
+        """, (
+            n["daily_value_intake_percent"],
+            n["gtin"],
+            n["nutrient_code"]
         ))

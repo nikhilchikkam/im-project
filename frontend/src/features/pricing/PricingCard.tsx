@@ -40,9 +40,9 @@ export const PricingCard = ({
                 <X className="w-5 h-5 text-red-500" />
               )}
               <span>{feature.text}</span>
-            </li>
-          ))}
-        </ul>
+          </li>
+        ))}
+      </ul>
       </div>
       <Link to="/subscription" className="w-full mt-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 text-center">
         Get it now

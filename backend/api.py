@@ -37,10 +37,12 @@ def get_db():
 def get_products(db: Session = Depends(get_db), class_title: str = None, family_title: list[str] = Query(None), search_term: str = None, limit: int = 12, offset: int = 0):
     """
     Fetch products from the database.
-    This endpoint retrieves a list of all products, optionally filtered by class_title, family_title (multi), and a search term, with pagination support.
+    This endpoint retrieves a list of all products with nutrition data, optionally filtered by class_title, family_title (multi), and a search term, with pagination support.
+    Returns pagination metadata: total, limit, offset, and products.
     """
     try:
-        base_query = "SELECT gtin, name, description, brand, product_type, gpc_code, class_title, family_title FROM products"
+        base_query = "SELECT gtin, name, description, brand, product_type, gpc_code, class_title, family_title FROM products_with_nutrition"
+        count_query = "SELECT COUNT(*) FROM products_with_nutrition"
         conditions = []
         params = {}
 
@@ -54,18 +56,27 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
             conditions.append("name ILIKE :search_term")
             params['search_term'] = f"%{search_term}%"
 
-        if conditions:
-            base_query += " WHERE " + " AND ".join(conditions)
+        where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+        base_query += where_clause
+        count_query += where_clause
         base_query += " ORDER BY name ASC LIMIT :limit OFFSET :offset"
         params['limit'] = limit
         params['offset'] = offset
         query = text(base_query)
+        count_q = text(count_query)
 
         products_result = db.execute(query, params).fetchall()
-        return [
-            {"gtin": p.gtin, "name": p.name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title}
-            for p in products_result
-        ]
+        total = db.execute(count_q, params).scalar()
+
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "products": [
+                {"gtin": p.gtin, "name": p.name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title}
+                for p in products_result
+            ]
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -82,7 +93,7 @@ def get_product_details(gtin: str, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail="Product not found")
 
         nutrition_query = text("""
-            SELECT nutrient_code, nutrient_label, value, unit
+            SELECT nutrient_code, nutrient_label, value, unit, daily_value_intake_percent
             FROM product_nutrition
             WHERE gtin = :gtin
         """)
@@ -104,7 +115,7 @@ def get_product_nutrition(gtin: str, db: Session = Depends(get_db)):
     try:
         # Fetch nutrition details
         nutrition_query = text("""
-            SELECT nutrient_code, nutrient_label, value, unit
+            SELECT nutrient_code, nutrient_label, value, unit, daily_value_intake_percent
             FROM product_nutrition
             WHERE gtin = :gtin
         """)

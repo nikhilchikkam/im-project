@@ -3,7 +3,7 @@ import json
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
-from nutrition_loader import extract_nutrition, insert_nutrition
+from nutrition_loader import extract_nutrition, insert_nutrition, extract_daily_value_intake_percent, insert_daily_value_intake_percent
 from serving_loader import extract_serving, insert_serving
 
 # Load DB credentials from .env file
@@ -61,8 +61,11 @@ def process_file(file_path, cur):
             # nutrition = extract_nutrition(item)
             # insert_nutrition(cur, nutrition)
 
-            serving = extract_serving(item)
-            insert_serving(cur, serving)
+            daily_value_rows = extract_daily_value_intake_percent(item)
+            insert_daily_value_intake_percent(cur, daily_value_rows)
+
+            # serving = extract_serving(item)
+            # insert_serving(cur, serving)
 
             conn.commit()
             success_count += 1

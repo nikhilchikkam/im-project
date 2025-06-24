@@ -1,95 +1,136 @@
-type NutritionFacts = {
-  calories: number;
-  servingSize: string;
-  servingsPerContainer: number;
-  totalFat: number;
-  saturatedFat: number;
-  transFat: number;
-  cholesterol: number;
-  sodium: number;
-  totalCarb: number;
-  dietaryFiber: number;
-  sugars: number;
-  protein: number;
-  vitaminD: number;
-  calcium: number;
-  potassium: number;
-  iron: number;
+import React from 'react';
+
+type Nutrient = {
+  nutrient_label: string;
+  value: string | number;
+  unit: string;
+  daily_value_intake_percent?: string | number;
 };
 
 type ServingInfo = {
   serving_description?: string;
   serving_size_value?: number;
   serving_size_unit?: string;
-  basis_quantity_type?: string;
-  // ... (other serving fields if needed)
+  servings_per_container?: string | number;
 };
 
-const NutritionFactsCard = ({ nutritionFacts, servingInfo }: { nutritionFacts: NutritionFacts, servingInfo: ServingInfo | null }) => {
-  const nf = nutritionFacts || {};
+type Props = {
+  servingInfo?: ServingInfo | null;
+  nutrients: Nutrient[];
+};
+
+const NutritionFactsCard: React.FC<Props> = ({ servingInfo, nutrients }) => {
   const si = servingInfo || {};
-  const amountPerText = si.basis_quantity_type === 'BY_MEASURE' ? 'Amount Per Measure' : 'Amount Per Serving';
-  const servingsPerContainerText = si.serving_size_value && si.serving_size_unit
-    ? `${si.serving_size_value} ${si.serving_size_unit}`
-    : 'N/A';
+  // Helper to find nutrients by label
+  const getNutrient = (label: string) =>
+    nutrients.find(n => n.nutrient_label.toLowerCase().includes(label.toLowerCase()));
+
+  const totalFat = getNutrient('total_fat');
+  const satFat = getNutrient('saturated_fat');
+  const transFat = getNutrient('trans_fat');
+  const cholesterol = getNutrient('cholesterol');
+  const sodium = getNutrient('sodium');
+  const totalCarb = getNutrient('total_carbohydrate');
+  const fiber = getNutrient('dietary_fiber');
+  const totalSugars = getNutrient('sugars');
+  const addedSugars = getNutrient('added_sugars');
+  const protein = getNutrient('protein');
+  const vitaminD = getNutrient('vitamin_d');
+  const calcium = getNutrient('calcium');
+  const iron = getNutrient('iron');
+  const potassium = getNutrient('potassium');
+  const calories = getNutrient('calories');
 
   return (
-    <div className="bg-white border-2 border-black p-4 w-80 min-w-[320px] max-w-xs rounded-lg">
-      <div className="text-2xl font-extrabold border-b-8 border-black pb-1 mb-1">Nutrition Facts</div>
-      <div className="text-sm mb-1">Serving size {si.serving_description || 'N/A'}</div>
-      <div className="text-sm mb-1">Servings Per Container {servingsPerContainerText}</div>
-      <div className="border-b-4 border-black my-1" />
-      <div className="font-bold text-sm py-1">{amountPerText}</div>
-      <div className="border-b border-black my-1" />
-      <div className="flex justify-between text-lg font-bold mb-1">
-        <span>Calories</span>
-        <span>{nf.calories || 0}</span>
+    <div className="bg-white border-[8px] border-black w-[380px] p-0 font-sans text-black select-none">
+      {/* Header */}
+      <div className="text-[2.1rem] font-extrabold leading-none border-b-[8px] border-black px-3 pt-2 pb-1 tracking-tight">Nutrition Facts</div>
+      {/* Servings per container */}
+      <div className="text-base font-normal px-3 pt-1 pb-0.5">{si.servings_per_container ?? 'N/A'} servings per container</div>
+      {/* Serving size */}
+      <div className="text-base font-normal px-3 pb-1"><span className="font-bold">Serving size</span> {si.serving_size_value ?? 'N/A'} {si.serving_size_unit ?? ''} {si.serving_description ? `(${si.serving_description})` : ''}</div>
+      {/* Thick divider */}
+      <div className="border-b-[4px] border-black mx-0 my-1" />
+      {/* Amount per serving */}
+      <div className="px-3 pt-1 pb-0.5 text-[1.05rem] font-bold">Amount per serving</div>
+      {/* Calories */}
+      <div className="flex justify-between items-end px-3 pb-1">
+        <span className="text-[2.2rem] font-extrabold leading-none">Calories</span>
+        <span className="text-[2.2rem] font-extrabold leading-none">{calories?.value || 0}</span>
       </div>
-      <div className="border-b-4 border-black my-1" />
-      <div className="text-xs mb-1">% Daily Value*</div>
-      <div className="flex justify-between text-base font-semibold">
-        <span>Total Fat {nf.totalFat || 0}g</span>
-        <span></span>
+      {/* Thick divider */}
+      <div className="border-b-[4px] border-black mx-0 my-1" />
+      {/* % Daily Value */}
+      <div className="flex justify-end px-3 text-xs font-bold uppercase pb-0.5">% Daily Value*</div>
+      {/* Thin divider */}
+      <div className="border-b border-black mx-0 my-1" />
+      {/* Nutrient rows */}
+      <div className="px-3">
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
+          <span><span className="font-bold">Total Fat</span> <span className="font-normal">{totalFat?.value}{totalFat?.unit}</span></span>
+          <span>{totalFat?.daily_value_intake_percent ? <span className="font-bold">{`${totalFat.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[0.98rem] ml-4 border-b border-black">
+          <span><span className="font-bold">Saturated Fat</span> {satFat?.value}{satFat?.unit}</span>
+          <span>{satFat?.daily_value_intake_percent ? <span className="font-bold">{`${satFat.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[0.98rem] ml-4 italic border-b border-black">
+          <span><span className="font-bold not-italic">Trans Fat</span> {transFat?.value}{transFat?.unit}</span>
+        </div>
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
+          <span><span className="font-bold">Cholesterol</span> <span className="font-normal">{cholesterol?.value}{cholesterol?.unit}</span></span>
+          <span>{cholesterol?.daily_value_intake_percent ? <span className="font-bold">{`${cholesterol.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
+          <span><span className="font-bold">Sodium</span> <span className="font-normal">{sodium?.value}{sodium?.unit}</span></span>
+          <span>{sodium?.daily_value_intake_percent ? <span className="font-bold">{`${sodium.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
+          <span><span className="font-bold">Total Carbohydrate</span> <span className="font-normal">{totalCarb?.value}{totalCarb?.unit}</span></span>
+          <span>{totalCarb?.daily_value_intake_percent ? <span className="font-bold">{`${totalCarb.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[0.98rem] ml-4 border-b border-black">
+          <span><span className="font-bold">Dietary Fiber</span> {fiber?.value}{fiber?.unit}</span>
+          <span>{fiber?.daily_value_intake_percent ? <span className="font-bold">{`${fiber.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[0.98rem] ml-4 border-b border-black">
+          <span><span className="font-bold">Total Sugars</span> {totalSugars?.value}{totalSugars?.unit}</span>
+        </div>
+        <div className="flex justify-between text-[0.98rem] ml-8 border-b border-black">
+          <span>Includes {addedSugars?.value}{addedSugars?.unit} Added Sugars</span>
+          <span>{addedSugars?.daily_value_intake_percent ? <span className="font-bold">{`${addedSugars.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[1.05rem] border-0 font-bold">
+          <span><span className="font-bold">Protein</span> <span className="font-normal">{protein?.value}{protein?.unit}</span></span>
+        </div>
       </div>
-      <div className="flex justify-between text-xs ml-4">
-        <span>Saturated Fat {nf.saturatedFat || 0}g</span>
-        <span></span>
+      {/* Thick divider */}
+      <div className="border-b-[4px] border-black mx-0 my-2" />
+      {/* Vitamins and minerals */}
+      <div className="px-3">
+        <div className="flex justify-between text-[0.98rem] border-b border-black">
+          <span><span className="font-bold">Vitamin D</span> {vitaminD?.value}{vitaminD?.unit}</span>
+          <span>{vitaminD?.daily_value_intake_percent ? <span className="font-bold">{`${vitaminD.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[0.98rem] border-b border-black">
+          <span><span className="font-bold">Calcium</span> {calcium?.value}{calcium?.unit}</span>
+          <span>{calcium?.daily_value_intake_percent ? <span className="font-bold">{`${calcium.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[0.98rem] border-b border-black">
+          <span><span className="font-bold">Iron</span> {iron?.value}{iron?.unit}</span>
+          <span>{iron?.daily_value_intake_percent ? <span className="font-bold">{`${iron.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
+        <div className="flex justify-between text-[0.98rem]">
+          <span><span className="font-bold">Potassium</span> {potassium?.value}{potassium?.unit}</span>
+          <span>{potassium?.daily_value_intake_percent ? <span className="font-bold">{`${potassium.daily_value_intake_percent}%`}</span> : ''}</span>
+        </div>
       </div>
-      <div className="flex justify-between text-xs ml-4">
-        <span>Trans Fat {nf.transFat || 0}g</span>
-        <span></span>
+      {/* Thin divider */}
+      <div className="border-b border-black mx-0 my-2" />
+      {/* Footnote */}
+      <div className="text-[0.68rem] text-black px-3 pb-2 pt-1 leading-tight">
+        * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.
       </div>
-      <div className="flex justify-between text-base font-semibold">
-        <span>Cholesterol {nf.cholesterol || 0}mg</span>
-        <span></span>
-      </div>
-      <div className="flex justify-between text-base font-semibold">
-        <span>Sodium {nf.sodium || 0}mg</span>
-        <span></span>
-      </div>
-      <div className="flex justify-between text-base font-semibold">
-        <span>Total Carbohydrate {nf.totalCarb || 0}g</span>
-        <span></span>
-      </div>
-      <div className="flex justify-between text-xs ml-4">
-        <span>Dietary Fiber {nf.dietaryFiber || 0}g</span>
-        <span></span>
-      </div>
-      <div className="flex justify-between text-xs ml-4">
-        <span>Sugars {nf.sugars || 0}g</span>
-        <span></span>
-      </div>
-      <div className="flex justify-between text-base font-semibold">
-        <span>Protein {nf.protein || 0}g</span>
-        <span></span>
-      </div>
-      <div className="flex flex-col gap-0.5 text-xs mt-2">
-        <div>Vitamin D {nf.vitaminD || 0}mcg</div>
-        <div>Calcium {nf.calcium || 0}mg</div>
-        <div>Potassium {nf.potassium || 0}mg</div>
-        <div>Iron {nf.iron || 0}mg</div>
-      </div>
-      <div className="text-[10px] text-gray-500 mt-2">* Percent Daily Values are based on a 2,000 calorie diet. Your Daily Values may be higher or lower depending on your calorie needs</div>
     </div>
   );
 };

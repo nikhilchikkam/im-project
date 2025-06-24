@@ -1,5 +1,5 @@
 import json
-from nutrition_loader import extract_nutrition
+from nutrition_loader import extract_nutrition, extract_daily_value_intake_percent
 from product_loader import extract_product
 from serving_loader import extract_serving
 
@@ -40,8 +40,20 @@ def test_extract_nutrition():
     assert "value" in nutrition_rows[0]
 
 
+def test_extract_daily_value_intake_percent():
+    item = load_sample("item.json")
+    rows = extract_daily_value_intake_percent(item)
+    print("\n=== Daily Value Intake Percent ===")
+    for row in rows:
+        print(row)
+    assert len(rows) > 0
+    assert "gtin" in rows[0]
+    assert "daily_value_intake_percent" in rows[0]
+
+
 if __name__ == "__main__":
     # test_extract_product()
     # test_extract_nutrition()
-    test_extract_serving()
+    test_extract_daily_value_intake_percent()
+    # test_extract_serving()
 

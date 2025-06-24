@@ -141,7 +141,7 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
               <div className="text-red-500">{error}</div>
             ) : (
               <NutritionFactsCard
-                nutritionFacts={nutritionFacts}
+                nutrients={nutritionData ? nutritionData.nutrients : []}
                 servingInfo={servingInfo}
               />
             )}
