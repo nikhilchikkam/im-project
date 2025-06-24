@@ -9,4 +9,7 @@ export default defineConfig({
       '/api': 'http://localhost:8000',
     },
   },
+  preview: {
+    allowedHosts: ['nutrigence-app-d2jla.ondigitalocean.app']
+  }
 })

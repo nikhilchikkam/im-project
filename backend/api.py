@@ -18,7 +18,10 @@ app = FastAPI()
 # CORS middleware to allow requests from the frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Adjust this to your frontend's address
+    allow_origins=[
+        "http://localhost:5173",  # for local development
+        "https://nutrigence-app-d2jla.ondigitalocean.app"  # for production
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
