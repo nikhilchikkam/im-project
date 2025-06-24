@@ -88,7 +88,8 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
     if (!product?.gtin) return;
     setLoading(true);
     setError(null);
-    fetch(`/api/nutrition/${product.gtin}`)
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    fetch(`${apiUrl}/api/nutrition/${product.gtin}`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch nutrition');
         return res.json();

@@ -50,6 +50,8 @@ const HomePage = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
 
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+
   // Fetch products from API
   useEffect(() => {
     const fetchProducts = async () => {
@@ -65,7 +67,7 @@ const HomePage = () => {
         }
         params.append('limit', limit.toString());
         params.append('offset', ((page - 1) * limit).toString());
-        const res = await fetch(`/api/products?${params.toString()}`);
+        const res = await fetch(`${apiUrl}/api/products?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch products');
         const data = await res.json();
         setProducts(data.products || []);
@@ -76,7 +78,7 @@ const HomePage = () => {
       }
     };
     fetchProducts();
-  }, [selectedCategories, searchTerm, page, limit]);
+  }, [selectedCategories, searchTerm, page, limit, apiUrl]);
 
   // Debounce search input
   useEffect(() => {
