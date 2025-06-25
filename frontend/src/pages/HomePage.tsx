@@ -1,10 +1,11 @@
 import NavbarAfter from '../components/navigation/NavbarAfter';
 import { useState, useRef, useEffect } from 'react';
-import { X, Filter } from 'lucide-react';
+import { X, Filter, Pencil } from 'lucide-react';
 import ProductCard from '../components/product/ProductCard';
 import ProductTable from '../components/product/ProductTable';
 import { List, LayoutGrid } from 'lucide-react';
 import ProductDetailsModal from '../features/products/ProductDetailsModal';
+import Pagination from '../components/ui/Pagination';
 
 const categories = [
   'All Categories',
@@ -35,6 +36,13 @@ const categories = [
   'Vegetables (Non Leaf) - Unprepared/Unprocessed (Fresh)',
 ];
 
+const guidelineOptions = [
+  'Charity Giving',
+  'FDA',
+  'Good Choice',
+  'Smart Snack',
+];
+
 const DEFAULT_LIMIT = 12;
 
 const HomePage = () => {
@@ -49,6 +57,10 @@ const HomePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
+  const [showGuidelineDropdown, setShowGuidelineDropdown] = useState(false);
+  const [selectedGuidelines, setSelectedGuidelines] = useState<string[]>([]);
+  const guidelineDropdownRef = useRef<HTMLDivElement>(null);
+  const [total, setTotal] = useState(0);
 
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
@@ -65,12 +77,17 @@ const HomePage = () => {
         if (searchTerm) {
           params.append('search_term', searchTerm);
         }
+        // Add is_smart_snack filter if Smart Snack is selected
+        if (selectedGuidelines.includes('Smart Snack')) {
+          params.append('is_smart_snack', 'true');
+        }
         params.append('limit', limit.toString());
         params.append('offset', ((page - 1) * limit).toString());
         const res = await fetch(`${apiUrl}/api/products?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch products');
         const data = await res.json();
         setProducts(data.products || []);
+        setTotal(data.total || 0);
       } catch (err: any) {
         setError(err.message || 'Unknown error');
       } finally {
@@ -78,7 +95,7 @@ const HomePage = () => {
       }
     };
     fetchProducts();
-  }, [selectedCategories, searchTerm, page, limit, apiUrl]);
+  }, [selectedCategories, searchTerm, page, limit, apiUrl, selectedGuidelines]);
 
   // Debounce search input
   useEffect(() => {
@@ -90,11 +107,29 @@ const HomePage = () => {
   }, [searchInput]);
 
   const handleCategoryChange = (cat: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(cat)
-        ? prev.filter((c) => c !== cat)
-        : [...prev, cat]
-    );
+    if (cat === 'All Categories') {
+      if (selectedCategories.includes('All Categories')) {
+        // Uncheck all
+        setSelectedCategories([]);
+      } else {
+        // Check all
+        setSelectedCategories(categories.slice());
+      }
+    } else {
+      let newSelected;
+      if (selectedCategories.includes(cat)) {
+        // Remove this category
+        newSelected = selectedCategories.filter((c) => c !== cat && c !== 'All Categories');
+      } else {
+        // Add this category
+        newSelected = [...selectedCategories.filter((c) => c !== 'All Categories'), cat];
+        // If all categories (except 'All Categories') are now selected, add 'All Categories'
+        if (newSelected.length === categories.length - 1) {
+          newSelected = categories.slice();
+        }
+      }
+      setSelectedCategories(newSelected);
+    }
     setPage(1);
   };
 
@@ -105,6 +140,34 @@ const HomePage = () => {
 
   // Close dropdown on click outside
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Add click outside handler for guideline dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        guidelineDropdownRef.current &&
+        !guidelineDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowGuidelineDropdown(false);
+      }
+    }
+    if (showGuidelineDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showGuidelineDropdown]);
+
+  const handleGuidelineToggle = (guideline: string) => {
+    setSelectedGuidelines((prev) =>
+      prev.includes(guideline)
+        ? prev.filter((g) => g !== guideline)
+        : [...prev, guideline]
+    );
+  };
 
   // Modular renderers
   const renderResults = () => {
@@ -141,9 +204,8 @@ const HomePage = () => {
     );
   };
 
-  // Pagination controls
-  const handlePrevPage = () => setPage((p) => Math.max(1, p - 1));
-  const handleNextPage = () => setPage((p) => p + 1);
+  // Calculate totalPages
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <div className="min-h-screen bg-white">
@@ -174,24 +236,72 @@ const HomePage = () => {
         <div className="w-full flex flex-col items-center">
           <div className="w-[90%] max-w-6xl bg-[#f7f7f7] rounded-2xl shadow flex items-center px-4 py-4 gap-3 mb-10">
             {/* Guideline pill */}
-            <div className="flex items-center bg-[#eaeaea] rounded-xl px-6 py-3 text-lg text-gray-400 font-medium mr-2 min-w-[220px]">
-              <span className="flex-1">Select Guideline</span>
-              <X className="w-5 h-5 ml-2 cursor-pointer" />
+            <div
+              className={`flex items-center rounded-xl px-6 py-3 text-lg font-medium mr-2 min-w-[220px] relative cursor-pointer
+                ${selectedGuidelines.length > 0 ? 'bg-white border border-blue-400 text-black shadow' : 'bg-[#eaeaea] text-gray-400'}`}
+              onClick={() => setShowGuidelineDropdown((v) => !v)}
+            >
+              <div className="flex flex-1 flex-wrap gap-2 items-center">
+                {selectedGuidelines.length === 0 ? (
+                  <span className="flex-1">Select Guideline</span>
+                ) : (
+                  selectedGuidelines.map((g) => (
+                    <span key={g} className="bg-white text-gray-700 rounded px-2 py-1 text-sm flex items-center gap-1">
+                      {g}
+                      <X className="w-4 h-4 cursor-pointer" onClick={e => { e.stopPropagation(); handleGuidelineToggle(g); }} />
+                    </span>
+                  ))
+                )}
+              </div>
+              <X className="w-5 h-5 ml-2 cursor-pointer" onClick={e => { e.stopPropagation(); setSelectedGuidelines([]); }} />
+              {/* Dropdown */}
+              {showGuidelineDropdown && (
+                <div ref={guidelineDropdownRef} className="absolute left-0 top-full mt-2 bg-white border rounded-lg shadow-lg z-30 min-w-[220px] py-2">
+                  {guidelineOptions.map((option) => (
+                    <div key={option} className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer gap-2"
+                         onClick={e => { e.stopPropagation(); handleGuidelineToggle(option); }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedGuidelines.includes(option)}
+                        readOnly
+                        className="mr-2"
+                      />
+                      <span className="flex-1 text-gray-700">{option}</span>
+                      <Pencil className="w-4 h-4 text-gray-400 ml-2" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             {/* Product Keywords pill */}
-            <form className="flex items-center bg-[#eaeaea] rounded-xl px-6 py-3 text-lg text-gray-400 font-medium mr-2 min-w-[220px]">
+            <form
+              className={`flex items-center rounded-xl px-6 py-3 text-lg font-medium mr-2 min-w-[220px]
+                ${searchInput ? 'bg-white border border-blue-400 text-black shadow' : 'bg-[#eaeaea] text-gray-400'}`}
+            >
               <input
                 type="text"
                 placeholder="Product Keywords"
-                className="bg-transparent outline-none flex-1"
+                className="bg-transparent outline-none flex-1 text-black"
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
               />
+              {searchInput && (
+                <X className="w-5 h-5 ml-2 cursor-pointer" onClick={() => setSearchInput('')} />
+              )}
             </form>
             {/* Category pill */}
-            <div className="flex items-center bg-[#eaeaea] rounded-xl px-6 py-3 text-lg text-gray-400 font-medium mr-2 min-w-[220px]">
-              <span className="flex-1">Select Category</span>
-              <X className="w-5 h-5 ml-2 cursor-pointer" />
+            <div
+              className={`flex items-center rounded-xl px-6 py-3 text-lg font-medium mr-2 min-w-[220px]
+                ${selectedCategories.length > 0 && !selectedCategories.includes('All Categories') ? 'bg-white border border-blue-400 text-black shadow' : 'bg-[#eaeaea] text-gray-400'}`}
+            >
+              <span className="flex-1">
+                {selectedCategories.includes('All Categories') || selectedCategories.length === 0
+                  ? 'All Categories'
+                  : selectedCategories.length === 1
+                    ? selectedCategories[0]
+                    : `${selectedCategories.length} filters applied`}
+              </span>
+              <X className="w-5 h-5 ml-2 cursor-pointer" onClick={() => setSelectedCategories([])} />
             </div>
             {/* Divider */}
             <div className="h-8 w-px bg-gray-300 mx-2" />
@@ -240,7 +350,7 @@ const HomePage = () => {
                     <label key={cat} className="flex items-center gap-2 text-base">
                       <input
                         type="checkbox"
-                        checked={selectedCategories.includes(cat)}
+                        checked={selectedCategories.includes(cat) || (cat !== 'All Categories' && selectedCategories.includes('All Categories'))}
                         onChange={() => handleCategoryChange(cat)}
                       />
                       {cat}
@@ -257,20 +367,14 @@ const HomePage = () => {
         <div className="text-lg font-medium mb-4 mt-2">Search results</div>
         {renderResults()}
         {/* Pagination */}
-        <div className="flex items-center justify-between mt-8 text-gray-500 text-sm">
-          <div>
-            <button className="px-2 py-1 rounded hover:bg-gray-100" onClick={handlePrevPage} disabled={page === 1}>&lt; Previous</button>
-            <span className="mx-2 font-semibold text-black">{page}</span>
-            <button className="px-2 py-1 rounded hover:bg-gray-100" onClick={handleNextPage}>Next &gt;</button>
-          </div>
-          <div>
-            Products per Page
-            <select className="ml-2 border rounded px-2 py-1" value={limit} onChange={handleLimitChange}>
-              <option value={49}>49</option>
-              <option value={24}>24</option>
-              <option value={12}>12</option>
-            </select>
-          </div>
+        <div className="flex justify-center w-full mt-8">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            pageSize={limit}
+            onPageSizeChange={setLimit}
+          />
         </div>
       </section>
       {/* Product Details Modal */}

@@ -37,10 +37,10 @@ def get_db():
         db.close()
 
 @app.get("/api/products")
-def get_products(db: Session = Depends(get_db), class_title: str = None, family_title: list[str] = Query(None), search_term: str = None, limit: int = 12, offset: int = 0):
+def get_products(db: Session = Depends(get_db), class_title: str = None, family_title: list[str] = Query(None), search_term: str = None, is_smart_snack: bool = None, limit: int = 12, offset: int = 0):
     """
     Fetch products from the database.
-    This endpoint retrieves a list of all products with nutrition data, optionally filtered by class_title, family_title (multi), and a search term, with pagination support.
+    This endpoint retrieves a list of all products with nutrition data, optionally filtered by class_title, family_title (multi), search term, is_smart_snack, with pagination support.
     Returns pagination metadata: total, limit, offset, and products.
     """
     try:
@@ -58,6 +58,9 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
         if search_term:
             conditions.append("name ILIKE :search_term")
             params['search_term'] = f"%{search_term}%"
+        if is_smart_snack is not None:
+            conditions.append("is_smart_snack = :is_smart_snack")
+            params['is_smart_snack'] = is_smart_snack
 
         where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
         base_query += where_clause
