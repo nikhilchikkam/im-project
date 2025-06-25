@@ -121,6 +121,7 @@ const HomePage = () => {
               title={p.name || p.title}
               category={p.family_title || ''}
               description={p.description}
+              isSmartSnack={p.is_smart_snack}
               onEnlarge={() => setSelectedProduct(p)}
             />
           ))}

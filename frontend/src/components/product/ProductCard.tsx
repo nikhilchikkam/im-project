@@ -5,13 +5,14 @@ type ProductCardProps = {
   title: string;
   category: string;
   description: string;
+  isSmartSnack?: boolean;
   isFavorite?: boolean;
   onFavorite?: () => void;
   onAddToCart?: () => void;
   onEnlarge?: () => void;
 };
 
-const ProductCard = ({ upc, title, category, description, isFavorite, onFavorite, onAddToCart, onEnlarge }: ProductCardProps) => {
+const ProductCard = ({ upc, title, category, description, isSmartSnack, isFavorite, onFavorite, onAddToCart, onEnlarge }: ProductCardProps) => {
   return (
     <div className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white flex flex-col min-h-[260px] relative">
       <div className="flex items-center justify-between mb-2 w-full">
@@ -30,8 +31,11 @@ const ProductCard = ({ upc, title, category, description, isFavorite, onFavorite
         </div>
       </div>
       <div className="font-bold text-lg mb-1 leading-tight">{title}</div>
-      <div className="mb-2">
+      <div className="mb-2 flex items-center gap-2">
         <span className="inline-block bg-green-50 text-green-700 text-xs font-semibold rounded px-2 py-1 align-middle">• {category}</span>
+        {isSmartSnack && (
+          <span className="inline-block bg-green-50 text-green-700 text-xs font-semibold rounded px-2 py-1 align-middle ml-2">Smart Snack</span>
+        )}
       </div>
       <div className="text-sm text-gray-600 flex-1 mb-4">{description}</div>
       <div className="flex gap-2 mt-auto">
