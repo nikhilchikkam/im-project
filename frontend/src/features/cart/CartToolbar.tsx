@@ -15,7 +15,7 @@ const CartToolbar: React.FC<CartToolbarProps> = ({ title, onBack, onTitleChange,
       title={title}
       onBack={onBack}
       onTitleChange={onTitleChange}
-      onShare={onShare}
+      onShare={() => onShare("share")}
       onAddItem={onAddItem}
       showShare={true}
       showAddItem={true}

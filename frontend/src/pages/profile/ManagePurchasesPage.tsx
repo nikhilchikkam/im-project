@@ -9,7 +9,7 @@ import {
   LogOut,
   Pencil
 } from 'lucide-react';
-import ProfilePageLayout from '../layouts/ProfilePageLayout';
+import ProfilePageLayout from '../../layouts/ProfilePageLayout';
 
 // --- Reusable Sidebar ---
 // Note: In a larger app, this sidebar could be extracted into its own shared component.
