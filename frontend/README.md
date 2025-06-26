@@ -52,3 +52,19 @@ export default tseslint.config({
   },
 })
 ```
+
+## Environment Variables
+
+To configure the backend API URL, create a `.env` file in the `frontend` directory with:
+
+```
+VITE_API_URL=https://nutrigence.app
+```
+
+- For local development, you might use:
+  ```
+  VITE_API_URL=http://localhost:8000
+  ```
+- For production, set this to your deployed backend URL.
+
+**Tip:** If you use a reverse proxy so that frontend and backend share the same domain, you can use relative URLs (e.g., `/api/products`) in your API calls, and omit `VITE_API_URL` entirely.

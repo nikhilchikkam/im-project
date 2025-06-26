@@ -20,7 +20,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # for local development
-        "https://nutrigence-app-d2jla.ondigitalocean.app"  # for production
+        "https://nutrigence-app-d2jla.ondigitalocean.app",  # for production
+        "https://nutrigence.app"  # custom domain
     ],
     allow_credentials=True,
     allow_methods=["*"],
