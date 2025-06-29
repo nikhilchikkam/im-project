@@ -185,6 +185,7 @@ const HomePage = () => {
               category={p.family_title || ''}
               description={p.description}
               isSmartSnack={p.is_smart_snack}
+              novaLabel={p.nova_label}
               onEnlarge={() => setSelectedProduct(p)}
             />
           ))}
