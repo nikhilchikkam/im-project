@@ -4,7 +4,7 @@ import { PricingSection } from '../features/pricing/PricingSection';
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white overflow-y-scrollbar-gutter-stable">
       <NavbarBefore />
       {/* Hero Section */}
       <section className="text-center px-6 py-16 max-w-3xl mx-auto">

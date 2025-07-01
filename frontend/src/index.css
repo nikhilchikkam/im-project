@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    overflow-y: scrollbar-gutter stable;
+  }
+  
   h1 { @apply text-h1 font-inter; }
   h2 { @apply text-h2 font-inter; }
   h3 { @apply text-h3 font-inter; }

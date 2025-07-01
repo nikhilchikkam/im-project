@@ -5,7 +5,12 @@ const NavbarAfter = () => {
   const navigate = useNavigate();
   return (
     <header className="w-full px-6 py-4 flex items-center justify-between border-b border-neutral-200">
-      <div className="text-2xl font-bold">Nutrition Logo</div>
+      <div 
+        className="text-2xl font-bold cursor-pointer hover:text-blue-600 transition-colors"
+        onClick={() => navigate('/')}
+      >
+        Nutrition Logo
+      </div>
       <div className="flex items-center gap-10">
         <button onClick={() => navigate('/wishlist')} className="focus:outline-none">
           <Heart className="w-8 h-8" />
