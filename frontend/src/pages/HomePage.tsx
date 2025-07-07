@@ -22,6 +22,7 @@ const categories = [
   'Fruits/Vegetables Fresh & Fresh Cut',
   'Fruits/Vegetables Fresh Cut',
   'Fruits/Vegetables/Nuts/Seeds Prepared/Processed',
+  'Insects Edible',
   'Leaf Vegetables - Unprepared/Unprocessed (Fresh)',
   'Meat/Fish/Seafood Substitutes',
   'Meat/Poultry/Other Animals',
@@ -80,6 +81,10 @@ const HomePage = () => {
         // Add is_smart_snack filter if Smart Snack is selected
         if (selectedGuidelines.includes('Smart Snack')) {
           params.append('is_smart_snack', 'true');
+        }
+        // Add is_good_choice filter if Good Choice is selected
+        if (selectedGuidelines.includes('Good Choice')) {
+          params.append('is_good_choice', 'true');
         }
         params.append('limit', limit.toString());
         params.append('offset', ((page - 1) * limit).toString());
@@ -186,6 +191,7 @@ const HomePage = () => {
               description={p.description}
               isSmartSnack={p.is_smart_snack}
               novaLabel={p.nova_label}
+              isGoodChoice={p.is_good_choice}
               onEnlarge={() => setSelectedProduct(p)}
             />
           ))}

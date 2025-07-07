@@ -3,19 +3,14 @@ import json
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
-from nutrition_loader import extract_nutrition, insert_nutrition, extract_daily_value_intake_percent, insert_daily_value_intake_percent
-from serving_loader import extract_serving, insert_serving
+#from nutrition_loader import extract_nutrition, insert_nutrition, extract_daily_value_intake_percent, insert_daily_value_intake_percent
+#from serving_loader import extract_serving, insert_serving
+from allergen_loader import extract_allergens, insert_allergens
 
 # Load DB credentials from .env file
 load_dotenv()
 
-DB_CONFIG = {
-    "dbname": os.getenv("POSTGRES_DB"),
-    "user": os.getenv("POSTGRES_USER"),
-    "password": os.getenv("POSTGRES_PASSWORD"),
-    "host": os.getenv("POSTGRES_HOST", "localhost"),
-    "port": os.getenv("POSTGRES_PORT", "5432"),
-}
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 DATA_FOLDER = r"E:\Projects\Mendon\results\products2"
 LOG_FILE = "bad_records.log"
@@ -58,14 +53,9 @@ def process_file(file_path, cur):
                 skip_count += 1
                 continue
 
-            # nutrition = extract_nutrition(item)
-            # insert_nutrition(cur, nutrition)
-
-            daily_value_rows = extract_daily_value_intake_percent(item)
-            insert_daily_value_intake_percent(cur, daily_value_rows)
-
-            # serving = extract_serving(item)
-            # insert_serving(cur, serving)
+            # Only run allergen loader
+            allergen_rows = extract_allergens(item)
+            insert_allergens(cur, allergen_rows)
 
             conn.commit()
             success_count += 1
@@ -86,7 +76,7 @@ def process_all_files(folder_path):
 
     print(f"\nFound {total} JSON files to process.\n")
 
-    with psycopg2.connect(**DB_CONFIG) as db_conn:
+    with psycopg2.connect(DATABASE_URL) as db_conn:
         conn = db_conn
         with conn.cursor() as cur:
             for i, file in enumerate(files, 1):

@@ -38,14 +38,14 @@ def get_db():
         db.close()
 
 @app.get("/api/products")
-def get_products(db: Session = Depends(get_db), class_title: str = None, family_title: list[str] = Query(None), search_term: str = None, is_smart_snack: bool = None, limit: int = 12, offset: int = 0):
+def get_products(db: Session = Depends(get_db), class_title: str = None, family_title: list[str] = Query(None), search_term: str = None, is_smart_snack: bool = None, is_good_choice: str = None, limit: int = 12, offset: int = 0):
     """
     Fetch products from the database.
-    This endpoint retrieves a list of all products with nutrition data, optionally filtered by class_title, family_title (multi), search term, is_smart_snack, with pagination support.
+    This endpoint retrieves a list of all products with nutrition data, optionally filtered by class_title, family_title (multi), search term, is_smart_snack, is_good_choice, with pagination support.
     Returns pagination metadata: total, limit, offset, and products.
     """
     try:
-        base_query = "SELECT gtin, name, description, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, nova_label FROM products_with_nutrition"
+        base_query = "SELECT gtin, name, description, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, nova_label, is_good_choice FROM products_with_nutrition"
         count_query = "SELECT COUNT(*) FROM products_with_nutrition"
         conditions = []
         params = {}
@@ -62,6 +62,9 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
         if is_smart_snack is not None:
             conditions.append("is_smart_snack = :is_smart_snack")
             params['is_smart_snack'] = is_smart_snack
+        if is_good_choice is not None:
+            conditions.append("is_good_choice = :is_good_choice")
+            params['is_good_choice'] = is_good_choice
 
         where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
         base_query += where_clause
@@ -80,7 +83,7 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
             "limit": limit,
             "offset": offset,
             "products": [
-                {"gtin": p.gtin, "name": p.name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title, "is_smart_snack": p.is_smart_snack, "nova_label": p.nova_label}
+                {"gtin": p.gtin, "name": p.name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title, "is_smart_snack": p.is_smart_snack, "nova_label": p.nova_label, "is_good_choice": p.is_good_choice}
                 for p in products_result
             ]
         }

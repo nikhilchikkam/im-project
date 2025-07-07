@@ -7,13 +7,14 @@ type ProductCardProps = {
   description: string;
   isSmartSnack?: boolean;
   novaLabel?: string;
+  isGoodChoice?: string;
   isFavorite?: boolean;
   onFavorite?: () => void;
   onAddToCart?: () => void;
   onEnlarge?: () => void;
 };
 
-const ProductCard = ({ upc, title, category, description, isSmartSnack, novaLabel, isFavorite, onFavorite, onAddToCart, onEnlarge }: ProductCardProps) => {
+const ProductCard = ({ upc, title, category, description, isSmartSnack, novaLabel, isGoodChoice, isFavorite, onFavorite, onAddToCart, onEnlarge }: ProductCardProps) => {
   return (
     <div className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white flex flex-col min-h-[260px] relative">
       <div className="flex items-center justify-between mb-2 w-full">
@@ -37,8 +38,11 @@ const ProductCard = ({ upc, title, category, description, isSmartSnack, novaLabe
         {isSmartSnack && (
           <span className="inline-block bg-green-50 text-green-700 text-xs font-semibold rounded px-2 py-1 align-middle ml-2">Smart Snack</span>
         )}
+        {isGoodChoice === 'true' && (
+          <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-semibold rounded px-2 py-1 align-middle ml-2">Good Choice</span>
+        )}
         {novaLabel && (
-          <span className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold rounded px-2 py-1 align-middle ml-2">NOVA: {novaLabel}</span>
+          <span className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold rounded px-2 py-1 align-middle ml-2">Processing Level: {novaLabel}</span>
         )}
       </div>
       <div className="text-sm text-gray-600 flex-1 mb-4">{description}</div>

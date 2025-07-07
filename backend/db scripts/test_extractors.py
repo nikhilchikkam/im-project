@@ -1,7 +1,9 @@
 import json
+import pandas
 from nutrition_loader import extract_nutrition, extract_daily_value_intake_percent
 from product_loader import extract_product
 from serving_loader import extract_serving
+from allergen_loader import extract_allergens
 
 def test_extract_serving():
     with open("item.json", "r", encoding="utf-8") as f:
@@ -51,9 +53,20 @@ def test_extract_daily_value_intake_percent():
     assert "daily_value_intake_percent" in rows[0]
 
 
+def test_extract_allergens():
+    item = load_sample("item.json")
+    allergen_rows = extract_allergens(item)
+    print("\n=== Allergens ===")
+    for row in allergen_rows:
+        print(row)
+    assert len(allergen_rows) > 0
+    assert "gtin" in allergen_rows[0]
+    assert "allergenTypeCode" in allergen_rows[0] or allergen_rows[0]["allergenTypeCode"] is None
+
 if __name__ == "__main__":
     # test_extract_product()
     # test_extract_nutrition()
-    test_extract_daily_value_intake_percent()
+    # test_extract_daily_value_intake_percent()
     # test_extract_serving()
+    test_extract_allergens()
 

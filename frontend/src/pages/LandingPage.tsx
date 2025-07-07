@@ -40,7 +40,7 @@ const LandingPage = () => {
           Comparing doesn't have to be hard. We offer a range of USDA-approved guidelines to compare
           the food products against.
         </p>
-        <img src="comparison.png" alt="Product Comparison" className="mx-auto mb-16" />
+        <img src="comparison1.png" alt="Product Comparison" className="mx-auto mb-16" />
 
         <h2 className="text-2xl font-semibold mb-2">Team collaboration</h2>
         <p className="text-gray-600 mb-10">
