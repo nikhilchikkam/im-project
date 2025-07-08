@@ -42,7 +42,7 @@ const NutritionFactsCard: React.FC<Props> = ({ servingInfo, nutrients }) => {
   const calories = getNutrient('calories');
 
   return (
-    <div className="bg-white border-[8px] border-black w-[380px] p-0 font-sans text-black select-none">
+    <div className="bg-white border-[8px] border-black w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-[380px] min-w-0 p-0 font-sans text-black select-none">
       {/* Header */}
       <div className="text-[2.1rem] font-extrabold leading-none border-b-[8px] border-black px-3 pt-2 pb-1 tracking-tight">Nutrition Facts</div>
       {/* Servings per container */}
@@ -93,46 +93,35 @@ const NutritionFactsCard: React.FC<Props> = ({ servingInfo, nutrients }) => {
           <span><span className="font-bold">Dietary Fiber</span> {fiber?.value}{fiber?.unit}</span>
           <span>{fiber?.daily_value_intake_percent ? <span className="font-bold">{`${fiber.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
-        <div className="flex justify-between text-[0.98rem] ml-4 border-b border-black">
-          <span><span className="font-bold">Total Sugars</span> {totalSugars?.value}{totalSugars?.unit}</span>
+        <div className="flex justify-between text-[0.98rem] ml-4 italic border-b border-black">
+          <span><span className="font-bold not-italic">Sugars</span> {totalSugars?.value}{totalSugars?.unit}</span>
         </div>
-        <div className="flex justify-between text-[0.98rem] ml-8 border-b border-black">
-          <span>Includes {addedSugars?.value}{addedSugars?.unit} Added Sugars</span>
-          <span>{addedSugars?.daily_value_intake_percent ? <span className="font-bold">{`${addedSugars.daily_value_intake_percent}%`}</span> : ''}</span>
+        <div className="flex justify-between text-[0.98rem] ml-4 italic border-b border-black">
+          <span><span className="font-bold not-italic">Added Sugars</span> {addedSugars?.value}{addedSugars?.unit}</span>
         </div>
-        <div className="flex justify-between text-[1.05rem] border-0 font-bold">
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
           <span><span className="font-bold">Protein</span> <span className="font-normal">{protein?.value}{protein?.unit}</span></span>
+          <span>{protein?.daily_value_intake_percent ? <span className="font-bold">{`${protein.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
-      </div>
-      {/* Thick divider */}
-      <div className="border-b-[4px] border-black mx-0 my-2" />
-      {/* Vitamins and minerals */}
-      <div className="px-3">
-        <div className="flex justify-between text-[0.98rem] border-b border-black">
-          <span><span className="font-bold">Vitamin D</span> {vitaminD?.value}{vitaminD?.unit}</span>
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
+          <span><span className="font-bold">Vitamin D</span> <span className="font-normal">{vitaminD?.value}{vitaminD?.unit}</span></span>
           <span>{vitaminD?.daily_value_intake_percent ? <span className="font-bold">{`${vitaminD.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
-        <div className="flex justify-between text-[0.98rem] border-b border-black">
-          <span><span className="font-bold">Calcium</span> {calcium?.value}{calcium?.unit}</span>
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
+          <span><span className="font-bold">Calcium</span> <span className="font-normal">{calcium?.value}{calcium?.unit}</span></span>
           <span>{calcium?.daily_value_intake_percent ? <span className="font-bold">{`${calcium.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
-        <div className="flex justify-between text-[0.98rem] border-b border-black">
-          <span><span className="font-bold">Iron</span> {iron?.value}{iron?.unit}</span>
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
+          <span><span className="font-bold">Iron</span> <span className="font-normal">{iron?.value}{iron?.unit}</span></span>
           <span>{iron?.daily_value_intake_percent ? <span className="font-bold">{`${iron.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
-        <div className="flex justify-between text-[0.98rem]">
-          <span><span className="font-bold">Potassium</span> {potassium?.value}{potassium?.unit}</span>
+        <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
+          <span><span className="font-bold">Potassium</span> <span className="font-normal">{potassium?.value}{potassium?.unit}</span></span>
           <span>{potassium?.daily_value_intake_percent ? <span className="font-bold">{`${potassium.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
-      </div>
-      {/* Thin divider */}
-      <div className="border-b border-black mx-0 my-2" />
-      {/* Footnote */}
-      <div className="text-[0.68rem] text-black px-3 pb-2 pt-1 leading-tight">
-        * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.
       </div>
     </div>
   );
 };
 
-export default NutritionFactsCard; 
+export default NutritionFactsCard;

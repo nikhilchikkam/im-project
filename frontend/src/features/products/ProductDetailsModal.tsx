@@ -105,37 +105,37 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-      <div className="bg-white rounded-xl shadow-xl p-8 max-w-5xl w-full relative overflow-y-auto max-h-[90vh]">
+      <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 md:p-8 w-full max-w-full sm:max-w-2xl md:max-w-4xl lg:max-w-5xl relative overflow-y-auto max-h-[95vh] mx-2 sm:mx-4">
         <button
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
+          className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-700 z-10"
           onClick={onClose}
           aria-label="Close"
         >
           <X className="w-6 h-6" />
         </button>
         {/* Product header and description */}
-        <div className="mb-6">
-          <div className="flex flex-col md:flex-row gap-8">
-            <div className="flex-1">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+            <div className="flex-1 min-w-0">
               <ProductHeader product={{
                 upc: product.gtin,
                 title: product.name || product.title,
                 badges: dummyBadges,
               }} />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 mt-2 md:mt-0">
               <ProductDescription description={product.description} />
             </div>
           </div>
-          <div className="flex flex-col md:flex-row gap-4 mt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-2 md:mt-4">
             <ProductTagsSection title="Kosher" tags={kosherTags} />
             <ProductTagsSection title="Halal" tags={halalTags} />
           </div>
         </div>
         {/* Nutrition and summary */}
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8">
           {/* Left: Nutrition Facts */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 w-full md:w-auto">
             {loading ? (
               <div>Loading nutrition...</div>
             ) : error ? (
@@ -148,7 +148,7 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
             )}
           </div>
           {/* Right: Summary and details */}
-          <div className="flex-1 flex flex-col gap-4">
+          <div className="flex-1 flex flex-col gap-2 md:gap-4 mt-2 md:mt-0">
             {loading ? (
               <div>Loading summary...</div>
             ) : error ? (
@@ -156,7 +156,7 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
             ) : (
               <NutritionSummaryCard summary={nutritionSummary} />
             )}
-            <div className="bg-gray-50 rounded-lg p-4 min-h-[120px]">Other product details go here...</div>
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-4 min-h-[80px] sm:min-h-[120px]">Other product details go here...</div>
           </div>
         </div>
       </div>

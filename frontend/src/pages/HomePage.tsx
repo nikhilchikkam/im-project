@@ -6,6 +6,11 @@ import ProductTable from '../components/product/ProductTable';
 import { List, LayoutGrid } from 'lucide-react';
 import ProductDetailsModal from '../features/products/ProductDetailsModal';
 import Pagination from '../components/ui/Pagination';
+import HeroSection from '../components/home/HeroSection';
+import MobileFilterDrawer from '../components/home/MobileFilterDrawer';
+import ProductSearchBar from '../components/home/ProductSearchBar';
+import ProductFilterBar from '../components/home/ProductFilterBar';
+import ProductResults from '../components/home/ProductResults';
 
 const categories = [
   'All Categories',
@@ -62,6 +67,7 @@ const HomePage = () => {
   const [selectedGuidelines, setSelectedGuidelines] = useState<string[]>([]);
   const guidelineDropdownRef = useRef<HTMLDivElement>(null);
   const [total, setTotal] = useState(0);
+  const [showMobileFilter, setShowMobileFilter] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
@@ -174,170 +180,42 @@ const HomePage = () => {
     );
   };
 
-  // Modular renderers
-  const renderResults = () => {
-    if (loading) return <div className="text-center py-8">Loading...</div>;
-    if (error) return <div className="text-center text-red-500 py-8">{error}</div>;
-    if (products.length === 0) return <div className="text-center py-8">No products found.</div>;
-    if (viewType === 'card') {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-4">
-          {products.map((p) => (
-            <ProductCard
-              key={p.gtin}
-              upc={p.gtin}
-              title={p.name || p.title}
-              category={p.family_title || ''}
-              description={p.description}
-              isSmartSnack={p.is_smart_snack}
-              novaLabel={p.nova_label}
-              isGoodChoice={p.is_good_choice}
-              onEnlarge={() => setSelectedProduct(p)}
-            />
-          ))}
-        </div>
-      );
-    }
-    return (
-      <div className="mt-4">
-        <ProductTable products={products.map(p => ({
-          id: p.gtin,
-          category: p.family_title || '',
-          itemNumber: p.gtin,
-          name: p.name || p.title,
-          description: p.description,
-        }))} />
-      </div>
-    );
-  };
-
   // Calculate totalPages
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <div className="min-h-screen bg-white">
       <NavbarAfter />
-      {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center pt-12 pb-8">
-        <div className="flex items-center justify-center gap-8 mb-8">
-          {/* Left image */}
-          <img
-            src="https://i.imgur.com/4QfKuz1.png"
-            alt="Coco Pops"
-            className="w-48 h-48 object-contain -rotate-15"
-            style={{ transform: 'rotate(-15deg)' }}
+      <HeroSection />
+      {/* Filter/Search Bar */}
+      <div className="w-full flex flex-col items-center">
+          {/* Mobile: Only show search, filter icon, and view icons */}
+          <ProductSearchBar
+            searchInput={searchInput}
+            setSearchInput={setSearchInput}
+            viewType={viewType}
+            setViewType={setViewType}
+            setShowMobileFilter={setShowMobileFilter}
           />
-          {/* Headline */}
-          <h1 className="text-5xl font-bold text-center max-w-2xl">
-            Discover best quality<br />food products that fit<br />your palette
-          </h1>
-          {/* Right image */}
-          <img
-            src="https://i.imgur.com/4QfKuz1.png"
-            alt="Ginger Beer"
-            className="w-40 h-48 object-contain rotate-15"
-            style={{ transform: 'rotate(15deg)' }}
+          {/* Desktop: Full filter/search bar */}
+          <ProductFilterBar
+            searchInput={searchInput}
+            setSearchInput={setSearchInput}
+            selectedGuidelines={selectedGuidelines}
+            setSelectedGuidelines={setSelectedGuidelines}
+            selectedCategories={selectedCategories}
+            setSelectedCategories={setSelectedCategories}
+            guidelineOptions={guidelineOptions}
+            categories={categories}
+            showGuidelineDropdown={showGuidelineDropdown}
+            setShowGuidelineDropdown={setShowGuidelineDropdown}
+            handleGuidelineToggle={handleGuidelineToggle}
+            handleCategoryChange={handleCategoryChange}
+            guidelineDropdownRef={guidelineDropdownRef}
+            viewType={viewType}
+            setViewType={setViewType}
+            setShowFilters={setShowFilters}
           />
-        </div>
-        {/* Filter/Search Bar */}
-        <div className="w-full flex flex-col items-center">
-          <div className="w-[90%] max-w-6xl bg-[#f7f7f7] rounded-2xl shadow flex items-center px-4 py-4 gap-3 mb-10">
-            {/* Guideline pill */}
-            <div
-              className={`flex items-center rounded-xl px-6 py-3 text-lg font-medium mr-2 min-w-[220px] relative cursor-pointer
-                ${selectedGuidelines.length > 0 ? 'bg-white border border-blue-400 text-black shadow' : 'bg-[#eaeaea] text-gray-400'}`}
-              onClick={() => setShowGuidelineDropdown((v) => !v)}
-            >
-              <div className="flex flex-1 flex-wrap gap-2 items-center">
-                {selectedGuidelines.length === 0 ? (
-                  <span className="flex-1">Select Guideline</span>
-                ) : (
-                  selectedGuidelines.map((g) => (
-                    <span key={g} className="bg-white text-gray-700 rounded px-2 py-1 text-sm flex items-center gap-1">
-                      {g}
-                      <X className="w-4 h-4 cursor-pointer" onClick={e => { e.stopPropagation(); handleGuidelineToggle(g); }} />
-                    </span>
-                  ))
-                )}
-              </div>
-              <X className="w-5 h-5 ml-2 cursor-pointer" onClick={e => { e.stopPropagation(); setSelectedGuidelines([]); }} />
-              {/* Dropdown */}
-              {showGuidelineDropdown && (
-                <div ref={guidelineDropdownRef} className="absolute left-0 top-full mt-2 bg-white border rounded-lg shadow-lg z-30 min-w-[220px] py-2">
-                  {guidelineOptions.map((option) => (
-                    <div key={option} className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer gap-2"
-                         onClick={e => { e.stopPropagation(); handleGuidelineToggle(option); }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedGuidelines.includes(option)}
-                        readOnly
-                        className="mr-2"
-                      />
-                      <span className="flex-1 text-gray-700">{option}</span>
-                      <Pencil className="w-4 h-4 text-gray-400 ml-2" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* Product Keywords pill */}
-            <form
-              className={`flex items-center rounded-xl px-6 py-3 text-lg font-medium mr-2 min-w-[220px]
-                ${searchInput ? 'bg-white border border-blue-400 text-black shadow' : 'bg-[#eaeaea] text-gray-400'}`}
-            >
-              <input
-                type="text"
-                placeholder="Product Keywords"
-                className="bg-transparent outline-none flex-1 text-black"
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-              />
-              {searchInput && (
-                <X className="w-5 h-5 ml-2 cursor-pointer" onClick={() => setSearchInput('')} />
-              )}
-            </form>
-            {/* Category pill */}
-            <div
-              className={`flex items-center rounded-xl px-6 py-3 text-lg font-medium mr-2 min-w-[220px]
-                ${selectedCategories.length > 0 && !selectedCategories.includes('All Categories') ? 'bg-white border border-blue-400 text-black shadow' : 'bg-[#eaeaea] text-gray-400'}`}
-            >
-              <span className="flex-1">
-                {selectedCategories.includes('All Categories') || selectedCategories.length === 0
-                  ? 'All Categories'
-                  : selectedCategories.length === 1
-                    ? selectedCategories[0]
-                    : `${selectedCategories.length} filters applied`}
-              </span>
-              <X className="w-5 h-5 ml-2 cursor-pointer" onClick={() => setSelectedCategories([])} />
-            </div>
-            {/* Divider */}
-            <div className="h-8 w-px bg-gray-300 mx-2" />
-            {/* Filters button */}
-            <button
-              className="flex items-center gap-2 text-gray-500 font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition"
-              onClick={() => setShowFilters((v) => !v)}
-              type="button"
-            >
-              <Filter className="w-5 h-5" /> Filters
-            </button>
-            {/* View type toggle */}
-            <div className="flex items-center gap-2 ml-4">
-              <button
-                className={`p-2 rounded-lg ${viewType === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-200'}`}
-                onClick={() => setViewType('list')}
-                aria-label="List view"
-              >
-                <List className="w-6 h-6" />
-              </button>
-              <button
-                className={`p-2 rounded-lg ${viewType === 'card' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-200'}`}
-                onClick={() => setViewType('card')}
-                aria-label="Card view"
-              >
-                <LayoutGrid className="w-6 h-6" />
-              </button>
-            </div>
-          </div>
           {/* Filters Dropdown and Backdrop */}
           {showFilters && (
             <>
@@ -349,7 +227,7 @@ const HomePage = () => {
               />
               <div
                 ref={dropdownRef}
-                className="absolute z-20 mt-2 bg-white border rounded-lg shadow-lg p-6 flex gap-8 w-[700px] max-w-full"
+                className="absolute z-20 mt-2 bg-white border rounded-lg shadow-lg p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-8 w-[95vw] max-w-lg md:w-[700px] max-w-full"
                 style={{ top: '340px' }}
               >
                 <div className="flex flex-col gap-2 max-h-96 overflow-y-auto w-full">
@@ -368,11 +246,16 @@ const HomePage = () => {
             </>
           )}
         </div>
-      </section>
       {/* Results Section */}
       <section className="max-w-6xl mx-auto px-4 pb-12">
         <div className="text-lg font-medium mb-4 mt-2">Search results</div>
-        {renderResults()}
+        <ProductResults
+          products={products}
+          loading={loading}
+          error={error}
+          viewType={viewType}
+          setSelectedProduct={setSelectedProduct}
+        />
         {/* Pagination */}
         <div className="flex justify-center w-full mt-8">
           <Pagination
@@ -391,6 +274,17 @@ const HomePage = () => {
           onClose={() => setSelectedProduct(null)}
         />
       )}
+      {/* Mobile Filter Drawer/Modal */}
+      <MobileFilterDrawer
+        open={showMobileFilter}
+        onClose={() => setShowMobileFilter(false)}
+        guidelineOptions={guidelineOptions}
+        categories={categories}
+        selectedGuidelines={selectedGuidelines}
+        selectedCategories={selectedCategories}
+        handleGuidelineToggle={handleGuidelineToggle}
+        handleCategoryChange={handleCategoryChange}
+      />
     </div>
   );
 };

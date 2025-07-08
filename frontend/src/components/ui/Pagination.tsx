@@ -38,21 +38,21 @@ const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div className="w-full flex flex-col items-center gap-2 mt-8">
-      <div className="flex items-center gap-1 justify-center">
+      <div className="flex flex-wrap items-center gap-1 justify-center text-sm md:text-base">
         <button
-          className="px-2 py-1 rounded disabled:text-gray-300"
+          className="px-2 py-1 rounded disabled:text-gray-300 text-xs md:text-base"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          &lt; Previous
+          &lt; Prev
         </button>
         {getPageNumbers().map((p) =>
           typeof p === 'string' && p.includes('ellipsis') ? (
-            <span key={p} className="px-2">...</span>
+            <span key={p} className="px-1 md:px-2">...</span>
           ) : (
             <button
               key={p}
-              className={`px-3 py-1 rounded ${
+              className={`px-2 md:px-3 py-1 rounded text-xs md:text-base ${
                 currentPage === p
                   ? 'bg-gray-100 border border-gray-400 text-black font-semibold'
                   : 'hover:bg-gray-100'
@@ -65,14 +65,14 @@ const Pagination: React.FC<PaginationProps> = ({
           )
         )}
         <button
-          className="px-2 py-1 rounded disabled:text-gray-300"
+          className="px-2 py-1 rounded disabled:text-gray-300 text-xs md:text-base"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
           Next &gt;
         </button>
       </div>
-      <div className="flex items-center gap-2 justify-center mt-2">
+      <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 justify-center mt-2 text-xs md:text-base">
         <span>Products per Page</span>
         <select
           className="border rounded px-2 py-1"
