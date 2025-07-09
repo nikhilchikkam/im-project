@@ -27,7 +27,9 @@ const ProductResults: React.FC<ProductResultsProps> = ({
           <ProductCard
             key={p.gtin}
             upc={p.gtin}
-            title={p.name || p.title}
+            normalized_name={p.normalized_name}
+            name={p.name}
+            title={p.title}
             category={p.family_title || ''}
             description={p.description}
             isSmartSnack={p.is_smart_snack}
@@ -46,6 +48,7 @@ const ProductResults: React.FC<ProductResultsProps> = ({
         category: p.family_title || '',
         itemNumber: p.gtin,
         name: p.name || p.title,
+        normalized_name: p.normalized_name,
         description: p.description,
       }))} />
     </div>

@@ -45,7 +45,7 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
     Returns pagination metadata: total, limit, offset, and products.
     """
     try:
-        base_query = "SELECT gtin, name, description, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, nova_label, is_good_choice FROM products_with_nutrition"
+        base_query = "SELECT gtin, name, normalized_name, description, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, nova_label, is_good_choice FROM products_with_nutrition"
         count_query = "SELECT COUNT(*) FROM products_with_nutrition"
         conditions = []
         params = {}
@@ -83,7 +83,7 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
             "limit": limit,
             "offset": offset,
             "products": [
-                {"gtin": p.gtin, "name": p.name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title, "is_smart_snack": p.is_smart_snack, "nova_label": p.nova_label, "is_good_choice": p.is_good_choice}
+                {"gtin": p.gtin, "name": p.name, "normalized_name": p.normalized_name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title, "is_smart_snack": p.is_smart_snack, "nova_label": p.nova_label, "is_good_choice": p.is_good_choice}
                 for p in products_result
             ]
         }
@@ -96,7 +96,7 @@ def get_product_details(gtin: str, db: Session = Depends(get_db)):
     Fetch detailed information for a single product, including nutrition facts.
     """
     try:
-        product_query = text("SELECT gtin, name, description, ingredients, brand, product_type, gpc_code, class_title, family_title, is_smart_snack FROM products WHERE gtin = :gtin")
+        product_query = text("SELECT gtin, name, normalized_name, description, ingredients, brand, product_type, gpc_code, class_title, family_title, is_smart_snack FROM products WHERE gtin = :gtin")
         product = db.execute(product_query, {"gtin": gtin}).fetchone()
 
         if not product:

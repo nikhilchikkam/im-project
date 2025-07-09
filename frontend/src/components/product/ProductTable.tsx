@@ -2,8 +2,9 @@ type Product = {
   id: string;
   category: string;
   itemNumber: string;
-  name: string;
-  description: string;
+  name?: string;
+  normalized_name?: string;
+  description?: string;
 };
 
 const ProductTable = ({ products }: { products: Product[] }) => {
@@ -21,16 +22,21 @@ const ProductTable = ({ products }: { products: Product[] }) => {
           </tr>
         </thead>
         <tbody>
-          {products.map((p) => (
-            <tr key={p.id} className="border-b hover:bg-gray-50">
-              <td className="px-4 py-2"><input type="checkbox" /></td>
-              <td className="px-4 py-2"><span className="inline-block bg-red-100 text-red-600 text-xs font-semibold rounded px-2 py-1">• {p.category}</span></td>
-              <td className="px-4 py-2">{p.itemNumber}</td>
-              <td className="px-4 py-2">{p.name}</td>
-              <td className="px-4 py-2">{p.description}</td>
-              <td className="px-4 py-2 text-right"><span className="inline-block w-6 h-6 text-gray-400 cursor-pointer">&#8942;</span></td>
-            </tr>
-          ))}
+          {products.map((p) => {
+            const displayTitle = p.normalized_name?.trim()
+              ? p.normalized_name
+              : (p.name?.trim() ? p.name : 'N/A');
+            return (
+              <tr key={p.id} className="border-b hover:bg-gray-50">
+                <td className="px-4 py-2"><input type="checkbox" /></td>
+                <td className="px-4 py-2"><span className="inline-block bg-red-100 text-red-600 text-xs font-semibold rounded px-2 py-1">• {p.category}</span></td>
+                <td className="px-4 py-2">{p.itemNumber}</td>
+                <td className="px-4 py-2">{displayTitle}</td>
+                <td className="px-4 py-2">{p.description}</td>
+                <td className="px-4 py-2 text-right"><span className="inline-block w-6 h-6 text-gray-400 cursor-pointer">&#8942;</span></td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

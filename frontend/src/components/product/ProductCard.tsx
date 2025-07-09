@@ -1,10 +1,12 @@
 import { Heart, ShoppingCart, Maximize2 } from 'lucide-react';
 
-type ProductCardProps = {
+interface ProductCardProps {
   upc: string;
-  title: string;
-  category: string;
-  description: string;
+  title?: string;
+  normalized_name?: string;
+  name?: string;
+  category?: string;
+  description?: string;
   isSmartSnack?: boolean;
   novaLabel?: string;
   isGoodChoice?: string;
@@ -12,9 +14,25 @@ type ProductCardProps = {
   onFavorite?: () => void;
   onAddToCart?: () => void;
   onEnlarge?: () => void;
-};
+}
 
-const ProductCard = ({ upc, title, category, description, isSmartSnack, novaLabel, isGoodChoice, isFavorite, onFavorite, onAddToCart, onEnlarge }: ProductCardProps) => {
+const ProductCard: React.FC<ProductCardProps> = ({
+  upc,
+  title,
+  normalized_name,
+  name,
+  category,
+  description,
+  isSmartSnack,
+  novaLabel,
+  isGoodChoice,
+  onEnlarge,
+  onAddToCart,
+  onFavorite,
+}) => {
+  const displayTitle = normalized_name?.trim()
+    ? normalized_name
+    : (name?.trim() ? name : (title?.trim() ? title : 'N/A'));
   return (
     <div className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white flex flex-col min-h-[260px] relative">
       <div className="flex items-center justify-between mb-2 w-full">
@@ -32,7 +50,7 @@ const ProductCard = ({ upc, title, category, description, isSmartSnack, novaLabe
           )}
         </div>
       </div>
-      <div className="font-bold text-lg mb-1 leading-tight">{title}</div>
+      <div className="font-bold text-lg mb-1 leading-tight">{displayTitle}</div>
       <div className="mb-2 flex items-center gap-2 flex-wrap">
         <span className="inline-block bg-green-50 text-green-700 text-xs font-semibold rounded px-2 py-1 align-middle">• {category}</span>
         {isSmartSnack && (
