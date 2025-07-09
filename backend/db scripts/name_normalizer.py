@@ -13,27 +13,34 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 
 BATCH_SIZE = 1000
 
+
 def normalize_product_name(name: str) -> str:
     name = name.strip()
+
+    # Remove a leading token that contains both letters and digits
+    name = re.sub(r'^\s*[A-Za-z0-9]*[A-Za-z][A-Za-z0-9]*\d+[A-Za-z0-9]*\s+|^\s*[A-Za-z0-9]*\d+[A-Za-z][A-Za-z0-9]*\s+', '', name)
+
+    # Remove leading pure numeric tokens with more than 2 digits
+    name = re.sub(r'^\s*\d{3,}\b\s*', '', name)
 
     # Remove all dollar prices (e.g., "$2.00", "$.50", "$0.75", "$")
     name = re.sub(r'\$\s?\d*(\.\d{1,2})?', '', name)
 
     # Remove compound quantity-unit patterns (e.g., "3-2/40oz", "2/12pk")
     name = re.sub(
-        r'\b\d+[-/]\d+/?\d*(\.\d+)?\s?(oz|g|kg|lb|lbs|ct|pk|pkg|pcs?|ml|l|fl oz|gram|ounce)\b',
+        r'\b\d+[-/]\d+/?\d*(\.\d+)?\s?(oz|g|kg|lb|lbs|ct|pk|pkg|pcs?|ml|l|fl oz|gram|ounce|inch)\b',
         '', name, flags=re.IGNORECASE
     )
 
     # Remove bracketed unit phrases (e.g., "(18.6 FL OZ)", "(7 oz)")
     name = re.sub(
-        r'\(\s*\d+(\.\d+)?\s?(fl\s)?(oz|g|kg|lb|lbs|ct|pk|pkg|pcs?|ml|l)\s*\)',
+        r'\(\s*\d+(\.\d+)?\s?(fl\s)?(oz|g|kg|lb|lbs|ct|pk|pkg|pcs?|ml|l|ounce|inch)\s*\)',
         '', name, flags=re.IGNORECASE
     )
 
     # Remove quantity-unit patterns anywhere in the string (e.g., "12 oz", "1 lb")
     name = re.sub(
-        r'\b\d+(\.\d+)?\s?(oz|fl\s?oz|g|kg|lb|lbs|ct|pk|pkg|pcs?|each|ea|ml|l)\b',
+        r'\b\d+(\.\d+)?\s?(oz|fl\s?oz|g|kg|lb|lbs|ct|pk|pkg|pcs?|each|ea|ml|l|ounce|inch)\b',
         '', name, flags=re.IGNORECASE
     )
 
@@ -72,6 +79,7 @@ def ensure_normalized_name_column():
     else:
         logging.info('normalized_name column already exists.')
 
+
 def update_normalized_names_batched():
     with engine.begin() as conn:
         gtin_rows = conn.execute(text('''
@@ -99,6 +107,7 @@ def update_normalized_names_batched():
                 )
             logging.info(f'Updated batch {i//BATCH_SIZE + 1} ({len(updates)} records)')
     logging.info(f'Finished updating normalized_name for {len(gtins)} products.')
+
 
 if __name__ == '__main__':
     ensure_normalized_name_column()
