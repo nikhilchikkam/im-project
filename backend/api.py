@@ -38,14 +38,14 @@ def get_db():
         db.close()
 
 @app.get("/api/products")
-def get_products(db: Session = Depends(get_db), class_title: str = None, family_title: list[str] = Query(None), search_term: str = None, is_smart_snack: bool = None, is_good_choice: str = None, limit: int = 12, offset: int = 0):
+def get_products(db: Session = Depends(get_db), class_title: str = None, family_title: list[str] = Query(None), search_term: str = None, is_smart_snack: bool = None, is_good_choice: str = None, recommended_ok: str = None, limit: int = 12, offset: int = 0):
     """
     Fetch products from the database.
-    This endpoint retrieves a list of all products with nutrition data, optionally filtered by class_title, family_title (multi), search term, is_smart_snack, is_good_choice, with pagination support.
+    This endpoint retrieves a list of all products with nutrition data, optionally filtered by class_title, family_title (multi), search term, is_smart_snack, is_good_choice, recommended_ok, with pagination support.
     Returns pagination metadata: total, limit, offset, and products.
     """
     try:
-        base_query = "SELECT gtin, name, normalized_name, description, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, nova_label, is_good_choice FROM products_with_nutrition"
+        base_query = "SELECT gtin, name, normalized_name, description, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, nova_label, is_good_choice, recommended_ok FROM products_with_nutrition"
         count_query = "SELECT COUNT(*) FROM products_with_nutrition"
         conditions = []
         params = {}
@@ -65,6 +65,9 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
         if is_good_choice is not None:
             conditions.append("is_good_choice = :is_good_choice")
             params['is_good_choice'] = is_good_choice
+        if recommended_ok is not None:
+            conditions.append("recommended_ok = :recommended_ok")
+            params['recommended_ok'] = recommended_ok
 
         where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
         base_query += where_clause
@@ -83,7 +86,7 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
             "limit": limit,
             "offset": offset,
             "products": [
-                {"gtin": p.gtin, "name": p.name, "normalized_name": p.normalized_name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title, "is_smart_snack": p.is_smart_snack, "nova_label": p.nova_label, "is_good_choice": p.is_good_choice}
+                {"gtin": p.gtin, "name": p.name, "normalized_name": p.normalized_name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title, "is_smart_snack": p.is_smart_snack, "nova_label": p.nova_label, "is_good_choice": p.is_good_choice, "recommended_ok": getattr(p, 'recommended_ok', None)}
                 for p in products_result
             ]
         }
@@ -96,7 +99,7 @@ def get_product_details(gtin: str, db: Session = Depends(get_db)):
     Fetch detailed information for a single product, including nutrition facts.
     """
     try:
-        product_query = text("SELECT gtin, name, normalized_name, description, ingredients, brand, product_type, gpc_code, class_title, family_title, is_smart_snack FROM products WHERE gtin = :gtin")
+        product_query = text("SELECT gtin, name, normalized_name, description, ingredients, brand, product_type, gpc_code, class_title, family_title, is_smart_snack FROM products_with_nutrition WHERE gtin = :gtin")
         product = db.execute(product_query, {"gtin": gtin}).fetchone()
 
         if not product:
@@ -148,6 +151,24 @@ def get_product_nutrition(gtin: str, db: Session = Depends(get_db)):
             "nutrients": [dict(n._mapping) for n in nutrition_info_result]
         }
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/allergens/{gtin}")
+def get_product_allergens(gtin: str, db: Session = Depends(get_db)):
+    """
+    Fetch allergen information for a single product.
+    """
+    try:
+        allergen_query = text("""
+            SELECT gtin, allergenspecificationagency, allergenspecificationname, allergentypecode, allergentypename, levelofcontainmentcode, allergenstatement, isallergenrelevantdataprovided
+            FROM product_allergen
+            WHERE gtin = :gtin
+        """)
+        allergen_info_result = db.execute(allergen_query, {"gtin": gtin}).fetchall()
+        if not allergen_info_result:
+            raise HTTPException(status_code=404, detail="Allergen information not found for this product")
+        return [dict(a._mapping) for a in allergen_info_result]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

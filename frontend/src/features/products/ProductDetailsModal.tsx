@@ -5,6 +5,7 @@ import NutritionSummaryCard from './NutritionSummaryCard';
 import ProductHeader from './ProductHeader';
 import ProductDescription from './ProductDescription';
 import ProductTagsSection from './ProductTagsSection';
+import ProductDetailsLayout from '../../layouts/ProductDetailsLayout';
 
 const dummyBadges = ['Meat', 'Gluten', 'Organic'];
 const kosherTags = ['Vegan tag', 'Vegan tag', 'Vegan tag'];
@@ -81,14 +82,25 @@ const mapNutritionSummary = (nutritionArr: any[]) => {
 
 const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => {
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null);
+  const [allergens, setAllergens] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [productDetails, setProductDetails] = useState<any | null>(null);
 
   useEffect(() => {
     if (!product?.gtin) return;
     setLoading(true);
     setError(null);
     const apiUrl = import.meta.env.VITE_API_URL || '';
+    // Fetch full product details
+    fetch(`${apiUrl}/api/products/${product.gtin}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch product details');
+        return res.json();
+      })
+      .then(data => setProductDetails(data))
+      .catch(() => setProductDetails(null));
+    // Fetch nutrition
     fetch(`${apiUrl}/api/nutrition/${product.gtin}`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch nutrition');
@@ -97,11 +109,22 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
       .then(data => setNutritionData(data))
       .catch(e => setError(e.message || 'Unknown error'))
       .finally(() => setLoading(false));
+    // Fetch allergens
+    fetch(`${apiUrl}/api/allergens/${product.gtin}`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAllergens(data.map(a => a.allergentypename).filter(Boolean));
+        } else {
+          setAllergens([]);
+        }
+      })
+      .catch(() => setAllergens([]));
   }, [product?.gtin]);
 
+  const details = productDetails || product;
   const nutritionFacts = nutritionData ? mapNutritionFacts(nutritionData.nutrients) : {};
   const nutritionSummary = nutritionData ? mapNutritionSummary(nutritionData.nutrients) : {};
-  const servingInfo = nutritionData ? nutritionData.serving_info : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
@@ -113,52 +136,59 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
         >
           <X className="w-6 h-6" />
         </button>
-        {/* Product header and description */}
-        <div className="mb-4 sm:mb-6">
-          <div className="flex flex-col md:flex-row gap-4 md:gap-8">
-            <div className="flex-1 min-w-0">
-              <ProductHeader product={{
-                upc: product.gtin,
-                title: product.name || product.title,
-                badges: dummyBadges,
-              }} />
-            </div>
-            <div className="flex-1 min-w-0 mt-2 md:mt-0">
-              <ProductDescription description={product.description} />
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-2 md:mt-4">
-            <ProductTagsSection title="Kosher" tags={kosherTags} />
-            <ProductTagsSection title="Halal" tags={halalTags} />
-          </div>
-        </div>
-        {/* Nutrition and summary */}
-        <div className="flex flex-col md:flex-row gap-4 md:gap-8">
-          {/* Left: Nutrition Facts */}
-          <div className="flex-shrink-0 w-full md:w-auto">
-            {loading ? (
-              <div>Loading nutrition...</div>
-            ) : error ? (
-              <div className="text-red-500">{error}</div>
-            ) : (
+        <ProductDetailsLayout
+          headerBlock={
+            <>
+              <div className="text-xs text-gray-500 mb-1">UPC/GTIN: {details.gtin}</div>
+              <div className="font-bold text-2xl mb-2">{details.normalized_name?.trim() ? details.normalized_name : (details.name?.trim() ? details.name : (details.title?.trim() ? details.title : 'N/A'))}</div>
+              <div className="flex gap-2 mb-2">{dummyBadges.map(b => <span key={b} className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">{b}</span>)}</div>
+              <div className="flex gap-2 mb-2">
+                <button className="bg-blue-100 text-blue-700 px-4 py-2 rounded font-semibold">Wishlist</button>
+                <button className="bg-blue-600 text-white px-4 py-2 rounded font-semibold">Cart</button>
+              </div>
+            </>
+          }
+          descriptionBlock={
+            <>
+              <div className="font-semibold text-base mb-1">Product Description</div>
+              <div className="text-sm text-gray-700 mb-4"><ProductDescription description={details.description} /></div>
+            </>
+          }
+          ingredientsBlock={
+            details.ingredients ? (
+              <div>
+                <div className="font-semibold text-base mb-1">Ingredients</div>
+                <div className="text-sm text-gray-700 whitespace-pre-line">{details.ingredients}</div>
+              </div>
+            ) : null
+          }
+          halalKosherBlock={
+            <>
+              <ProductTagsSection title="Halal" tags={halalTags} />
+              <ProductTagsSection title="Kosher" tags={kosherTags} />
+            </>
+          }
+          allergensBlock={
+            allergens.length > 0 ? (
+              <div className="bg-gray-50 rounded-lg p-2 sm:p-4">
+                <ProductTagsSection title="Allergens" tags={allergens} />
+              </div>
+            ) : null
+          }
+          nutritionFacts={
+            loading ? <div>Loading nutrition...</div> : error ? <div className="text-red-500">{error}</div> : (
               <NutritionFactsCard
                 nutrients={nutritionData ? nutritionData.nutrients : []}
-                servingInfo={servingInfo}
+                servingInfo={nutritionData ? nutritionData.serving_info : null}
               />
-            )}
-          </div>
-          {/* Right: Summary and details */}
-          <div className="flex-1 flex flex-col gap-2 md:gap-4 mt-2 md:mt-0">
-            {loading ? (
-              <div>Loading summary...</div>
-            ) : error ? (
-              <div className="text-red-500">{error}</div>
-            ) : (
+            )
+          }
+          nutritionSummary={
+            loading ? <div>Loading summary...</div> : error ? <div className="text-red-500">{error}</div> : (
               <NutritionSummaryCard summary={nutritionSummary} />
-            )}
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-4 min-h-[80px] sm:min-h-[120px]">Other product details go here...</div>
-          </div>
-        </div>
+            )
+          }
+        />
       </div>
     </div>
   );

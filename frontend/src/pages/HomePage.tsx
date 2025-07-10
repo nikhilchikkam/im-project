@@ -43,10 +43,9 @@ const categories = [
 ];
 
 const guidelineOptions = [
-  'Charity Giving',
-  'FDA',
   'Good Choice',
   'Smart Snack',
+  'Philly',
 ];
 
 const DEFAULT_LIMIT = 12;
@@ -91,6 +90,10 @@ const HomePage = () => {
         // Add is_good_choice filter if Good Choice is selected
         if (selectedGuidelines.includes('Good Choice')) {
           params.append('is_good_choice', 'true');
+        }
+        // Add recommended_ok filter if Philly is selected
+        if (selectedGuidelines.includes('Philly')) {
+          params.append('recommended_ok', 'true');
         }
         params.append('limit', limit.toString());
         params.append('offset', ((page - 1) * limit).toString());
