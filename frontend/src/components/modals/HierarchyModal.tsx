@@ -59,7 +59,14 @@ const HierarchyModal: React.FC<HierarchyModalProps> = ({ isOpen, onClose, gtin }
     
     try {
       // Step 1: Fetch hierarchy structure from Neo4j API
-      const hierarchyResponse = await fetch(`/api/neo4j/hierarchy/${gtin}`);
+      let hierarchyUrl = `/api/neo4j/hierarchy/${gtin}`;
+      if (
+        typeof window !== 'undefined' &&
+        (window.location.hostname === 'nutrigence.app' || window.location.hostname === 'www.nutrigence.app')
+      ) {
+        hierarchyUrl = `https://nutrigence.app/im-project-backend/api/neo4j/hierarchy/${gtin}`;
+      }
+      const hierarchyResponse = await fetch(hierarchyUrl);
       
       if (!hierarchyResponse.ok) {
         throw new Error(`HTTP error! status: ${hierarchyResponse.status}`);

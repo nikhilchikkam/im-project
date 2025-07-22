@@ -66,26 +66,45 @@ def get_product_hierarchy(gtin: str, db: Session = Depends(get_db)):
         driver.close()
         # Remove None/empty gtins
         gtins = [g for g in nodes if g]
-        # Query PostgreSQL for product names/images
+        # Query PostgreSQL for product names/images (try products_with_nutrition, then one_worldsync_products)
+        details = {}
         if gtins:
             placeholders = ','.join([f':gtin{i}' for i in range(len(gtins))])
-            sql = text(f"""
-                SELECT gtin, name, image_urls
+            # First, try products_with_nutrition
+            sql1 = text(f"""
+                SELECT gtin, name, image_urls, product_type, description
                 FROM products_with_nutrition
                 WHERE gtin IN ({placeholders})
             """)
             params = {f'gtin{i}': g for i, g in enumerate(gtins)}
-            result = db.execute(sql, params).fetchall()
-            details = {r.gtin: {"name": r.name, "image_urls": r.image_urls} for r in result}
-        else:
-            details = {}
+            result1 = db.execute(sql1, params).fetchall()
+            details = {r.gtin: {"name": r.name, "image_urls": r.image_urls, "product_type": r.product_type, "description": r.description} for r in result1}
+            # Find missing gtins
+            found_gtins = set(details.keys())
+            missing_gtins = [g for g in gtins if g not in found_gtins]
+            if missing_gtins:
+                placeholders2 = ','.join([f':mgtin{i}' for i in range(len(missing_gtins))])
+                sql2 = text(f"""
+                    SELECT gtin, name, brand, product_type, description
+                    FROM one_worldsync_products
+                    WHERE gtin IN ({placeholders2})
+                """)
+                params2 = {f'mgtin{i}': g for i, g in enumerate(missing_gtins)}
+                result2 = db.execute(sql2, params2).fetchall()
+                for r in result2:
+                    details[r.gtin] = {"name": r.name, "brand": r.brand, "product_type": r.product_type, "description": r.description}
         # Enrich nodes
         nodes_list = []
         for gtin in gtins:
             node = {"gtin": gtin}
-            if gtin in details:
-                node["name"] = details[gtin]["name"]
-                node["image_urls"] = details[gtin]["image_urls"]
+            detail = details.get(gtin, {})
+            node["name"] = detail.get("name")
+            node["product_type"] = detail.get("product_type")
+            node["description"] = detail.get("description")
+            if "image_urls" in detail:
+                node["image_urls"] = detail["image_urls"]
+            if "brand" in detail:
+                node["brand"] = detail["brand"]
             nodes_list.append(node)
         relationships_list = [
             {"source": s, "target": t, "type": typ, "level": lvl, "quantity": qty}
