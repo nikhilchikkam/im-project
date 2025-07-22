@@ -20,7 +20,6 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 criteria = {
     "targetMarket": "US",
     "pullHierarchy": False,
-    "isConsumerUnit": True,
     "sortFields": [
         {"field": "lastModifiedDate", "desc": True},
         {"field": "gtin", "desc": False}

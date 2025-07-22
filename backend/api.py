@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+from neo4j_api import router as neo4j_router
 
 load_dotenv(dotenv_path="db scripts/.env")
 
@@ -12,6 +13,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
 
 app = FastAPI()
 
@@ -27,6 +30,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include Neo4j router
+app.include_router(neo4j_router)
 
 
 # Dependency to get the database session
@@ -45,7 +51,7 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
     Returns pagination metadata: total, limit, offset, and products.
     """
     try:
-        base_query = "SELECT gtin, name, normalized_name, description, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, nova_label, is_good_choice, recommended_ok FROM products_with_nutrition"
+        base_query = "SELECT gtin, name, normalized_name, description, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, nova_label, is_good_choice, recommended_ok, image_urls FROM products_with_nutrition"
         count_query = "SELECT COUNT(*) FROM products_with_nutrition"
         conditions = []
         params = {}
@@ -86,7 +92,7 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
             "limit": limit,
             "offset": offset,
             "products": [
-                {"gtin": p.gtin, "name": p.name, "normalized_name": p.normalized_name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title, "is_smart_snack": p.is_smart_snack, "nova_label": p.nova_label, "is_good_choice": p.is_good_choice, "recommended_ok": getattr(p, 'recommended_ok', None)}
+                {"gtin": p.gtin, "name": p.name, "normalized_name": p.normalized_name, "description": p.description, "brand": p.brand, "product_type": p.product_type, "gpc_code": p.gpc_code, "class_title": p.class_title, "family_title": p.family_title, "is_smart_snack": p.is_smart_snack, "nova_label": p.nova_label, "is_good_choice": p.is_good_choice, "recommended_ok": getattr(p, 'recommended_ok', None), "image_urls": getattr(p, 'image_urls', None)}
                 for p in products_result
             ]
         }
@@ -99,7 +105,7 @@ def get_product_details(gtin: str, db: Session = Depends(get_db)):
     Fetch detailed information for a single product, including nutrition facts.
     """
     try:
-        product_query = text("SELECT gtin, name, normalized_name, description, ingredients, brand, product_type, gpc_code, class_title, family_title, is_smart_snack FROM products_with_nutrition WHERE gtin = :gtin")
+        product_query = text("SELECT gtin, name, normalized_name, description, ingredients, brand, product_type, gpc_code, class_title, family_title, is_smart_snack, image_urls FROM products_with_nutrition WHERE gtin = :gtin")
         product = db.execute(product_query, {"gtin": gtin}).fetchone()
 
         if not product:
@@ -120,19 +126,28 @@ def get_product_details(gtin: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
 @app.get("/api/nutrition/{gtin}")
 def get_product_nutrition(gtin: str, db: Session = Depends(get_db)):
     """
-    Fetch nutrition facts and serving information for a single product.
+    Fetch nutrition facts and serving information for a single product, using standardized values and units.
     """
     try:
         # Fetch nutrition details
         nutrition_query = text("""
-            SELECT nutrient_code, nutrient_label, value, unit, daily_value_intake_percent
+            SELECT nutrient_code, nutrient_label, value, unit, daily_value_intake_percent, standardized_value, standardized_unit
             FROM product_nutrition
             WHERE gtin = :gtin
         """)
         nutrition_info_result = db.execute(nutrition_query, {"gtin": gtin}).fetchall()
+        # Prepare nutrients with standardized values/units, fallback to 'N/A' if missing
+        nutrients = []
+        for n in nutrition_info_result:
+            n_map = dict(n._mapping)
+            n_map['standardized_value'] = n_map.get('standardized_value') if n_map.get('standardized_value') not in (None, '', 'null') else None
+            n_map['standardized_unit'] = n_map.get('standardized_unit') if n_map.get('standardized_unit') not in (None, '', 'null') else None
+            nutrients.append(n_map)
 
         # Fetch serving information
         serving_query = text("""
@@ -148,7 +163,7 @@ def get_product_nutrition(gtin: str, db: Session = Depends(get_db)):
 
         return {
             "serving_info": dict(serving_info._mapping) if serving_info else None,
-            "nutrients": [dict(n._mapping) for n in nutrition_info_result]
+            "nutrients": nutrients
         }
 
     except Exception as e:
@@ -157,13 +172,18 @@ def get_product_nutrition(gtin: str, db: Session = Depends(get_db)):
 @app.get("/api/allergens/{gtin}")
 def get_product_allergens(gtin: str, db: Session = Depends(get_db)):
     """
-    Fetch allergen information for a single product.
+    Fetch allergen information for a single product, excluding non-indicative statuses.
     """
     try:
         allergen_query = text("""
             SELECT gtin, allergenspecificationagency, allergenspecificationname, allergentypecode, allergentypename, levelofcontainmentcode, allergenstatement, isallergenrelevantdataprovided
             FROM product_allergen
             WHERE gtin = :gtin
+              AND (levelofcontainmentcode IS NULL OR levelofcontainmentcode NOT IN (
+                'FREE_FROM',
+                'Not Derived From',
+                'Not intentionally nor inherently included'
+              ))
         """)
         allergen_info_result = db.execute(allergen_query, {"gtin": gtin}).fetchall()
         if not allergen_info_result:

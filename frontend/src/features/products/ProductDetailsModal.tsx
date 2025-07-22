@@ -80,6 +80,22 @@ const mapNutritionSummary = (nutritionArr: any[]) => {
   return summary;
 };
 
+// Helper to get nutrient by label
+const getNutrient = (nutrients: any[], label: string) =>
+  nutrients.find((n: any) => n.nutrient_label && n.nutrient_label.toLowerCase().includes(label.toLowerCase()));
+
+// NutritionSummary type
+interface NutritionSummary {
+  calories: string | number;
+  calories_unit?: string;
+  fat: string | number;
+  fat_unit?: string;
+  sodium: string | number;
+  sodium_unit?: string;
+  protein: string | number;
+  protein_unit?: string;
+}
+
 const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => {
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null);
   const [allergens, setAllergens] = useState<string[]>([]);
@@ -125,6 +141,26 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
   const details = productDetails || product;
   const nutritionFacts = nutritionData ? mapNutritionFacts(nutritionData.nutrients) : {};
   const nutritionSummary = nutritionData ? mapNutritionSummary(nutritionData.nutrients) : {};
+
+  const summary: NutritionSummary = nutritionData && nutritionData.nutrients ? {
+    calories: getNutrient(nutritionData.nutrients, 'calories')?.standardized_value ?? 'N/A',
+    calories_unit: getNutrient(nutritionData.nutrients, 'calories')?.standardized_unit ?? '',
+    fat: getNutrient(nutritionData.nutrients, 'total_fat')?.standardized_value ?? 'N/A',
+    fat_unit: getNutrient(nutritionData.nutrients, 'total_fat')?.standardized_unit ?? '',
+    sodium: getNutrient(nutritionData.nutrients, 'sodium')?.standardized_value ?? 'N/A',
+    sodium_unit: getNutrient(nutritionData.nutrients, 'sodium')?.standardized_unit ?? '',
+    protein: getNutrient(nutritionData.nutrients, 'protein')?.standardized_value ?? 'N/A',
+    protein_unit: getNutrient(nutritionData.nutrients, 'protein')?.standardized_unit ?? '',
+  } : {
+    calories: 'N/A',
+    calories_unit: '',
+    fat: 'N/A',
+    fat_unit: '',
+    sodium: 'N/A',
+    sodium_unit: '',
+    protein: 'N/A',
+    protein_unit: '',
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
@@ -185,7 +221,7 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
           }
           nutritionSummary={
             loading ? <div>Loading summary...</div> : error ? <div className="text-red-500">{error}</div> : (
-              <NutritionSummaryCard summary={nutritionSummary} />
+              <NutritionSummaryCard summary={summary} />
             )
           }
         />

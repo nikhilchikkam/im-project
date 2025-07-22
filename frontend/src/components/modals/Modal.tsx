@@ -5,10 +5,11 @@ type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
+  title?: string;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl';
 };
 
-export const Modal = ({ isOpen, onClose, children, maxWidth = 'lg' }: ModalProps) => {
+export const Modal = ({ isOpen, onClose, children, title, maxWidth = 'lg' }: ModalProps) => {
   if (!isOpen) return null;
 
   const maxWidthClasses = {
@@ -16,6 +17,12 @@ export const Modal = ({ isOpen, onClose, children, maxWidth = 'lg' }: ModalProps
     md: 'max-w-md',
     lg: 'max-w-lg',
     xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
+    '6xl': 'max-w-6xl',
+    '7xl': 'max-w-7xl',
   };
 
   const modalContent = (
@@ -27,7 +34,8 @@ export const Modal = ({ isOpen, onClose, children, maxWidth = 'lg' }: ModalProps
         className={`bg-white rounded-lg shadow-xl w-full ${maxWidthClasses[maxWidth]}`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-end p-2">
+        <div className="flex justify-between items-center p-4 border-b">
+          {title && <h2 className="text-lg font-semibold text-gray-900">{title}</h2>}
           <button 
             onClick={onClose} 
             className="text-gray-400 hover:text-gray-600"
@@ -38,7 +46,7 @@ export const Modal = ({ isOpen, onClose, children, maxWidth = 'lg' }: ModalProps
             </svg>
           </button>
         </div>
-        <div className="px-8 pb-8">
+        <div className="px-6 pb-6">
           {children}
         </div>
       </div>

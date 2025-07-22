@@ -25,6 +25,17 @@ const NutritionFactsCard: React.FC<Props> = ({ servingInfo, nutrients }) => {
   const getNutrient = (label: string) =>
     nutrients.find(n => n.nutrient_label.toLowerCase().includes(label.toLowerCase()));
 
+  // Helper to get standardized value/unit or N/A
+  const showValue = (nutrient: any) => {
+    if (!nutrient || nutrient.standardized_value === undefined || nutrient.standardized_value === null || nutrient.standardized_value === '' || nutrient.standardized_value === 'N/A') return 'N/A';
+    return nutrient.standardized_unit && nutrient.standardized_unit !== 'FLAGGED_UNIT' ? `${nutrient.standardized_value} ${nutrient.standardized_unit}` : nutrient.standardized_value;
+  };
+  const getDisplayUnit = (nutrient: any) => {
+    if (!nutrient) return '';
+    if (nutrient.standardized_unit === undefined || nutrient.standardized_unit === null || nutrient.standardized_unit === '') return '';
+    return nutrient.standardized_unit;
+  };
+
   const totalFat = getNutrient('total_fat');
   const satFat = getNutrient('saturated_fat');
   const transFat = getNutrient('trans_fat');
@@ -56,7 +67,7 @@ const NutritionFactsCard: React.FC<Props> = ({ servingInfo, nutrients }) => {
       {/* Calories */}
       <div className="flex justify-between items-end px-3 pb-1">
         <span className="text-[2.2rem] font-extrabold leading-none">Calories</span>
-        <span className="text-[2.2rem] font-extrabold leading-none">{calories?.value || 0}</span>
+        <span className="text-xl font-extrabold leading-none">{showValue(calories)}</span>
       </div>
       {/* Thick divider */}
       <div className="border-b-[4px] border-black mx-0 my-1" />
@@ -67,56 +78,56 @@ const NutritionFactsCard: React.FC<Props> = ({ servingInfo, nutrients }) => {
       {/* Nutrient rows */}
       <div className="px-3">
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Total Fat</span> <span className="font-normal">{totalFat?.value}{totalFat?.unit}</span></span>
+          <span><span className="font-bold">Total Fat</span> <span className="font-normal">{showValue(totalFat)}</span></span>
           <span>{totalFat?.daily_value_intake_percent ? <span className="font-bold">{`${totalFat.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[0.98rem] ml-4 border-b border-black">
-          <span><span className="font-bold">Saturated Fat</span> {satFat?.value}{satFat?.unit}</span>
+          <span><span className="font-bold">Saturated Fat</span> {showValue(satFat)}</span>
           <span>{satFat?.daily_value_intake_percent ? <span className="font-bold">{`${satFat.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[0.98rem] ml-4 italic border-b border-black">
-          <span><span className="font-bold not-italic">Trans Fat</span> {transFat?.value}{transFat?.unit}</span>
+          <span><span className="font-bold not-italic">Trans Fat</span> {showValue(transFat)}</span>
         </div>
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Cholesterol</span> <span className="font-normal">{cholesterol?.value}{cholesterol?.unit}</span></span>
+          <span><span className="font-bold">Cholesterol</span> <span className="font-normal">{showValue(cholesterol)}</span></span>
           <span>{cholesterol?.daily_value_intake_percent ? <span className="font-bold">{`${cholesterol.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Sodium</span> <span className="font-normal">{sodium?.value}{sodium?.unit}</span></span>
+          <span><span className="font-bold">Sodium</span> <span className="font-normal">{showValue(sodium)}</span></span>
           <span>{sodium?.daily_value_intake_percent ? <span className="font-bold">{`${sodium.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Total Carbohydrate</span> <span className="font-normal">{totalCarb?.value}{totalCarb?.unit}</span></span>
+          <span><span className="font-bold">Total Carbohydrate</span> <span className="font-normal">{showValue(totalCarb)}</span></span>
           <span>{totalCarb?.daily_value_intake_percent ? <span className="font-bold">{`${totalCarb.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[0.98rem] ml-4 border-b border-black">
-          <span><span className="font-bold">Dietary Fiber</span> {fiber?.value}{fiber?.unit}</span>
+          <span><span className="font-bold">Dietary Fiber</span> {showValue(fiber)}</span>
           <span>{fiber?.daily_value_intake_percent ? <span className="font-bold">{`${fiber.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[0.98rem] ml-4 italic border-b border-black">
-          <span><span className="font-bold not-italic">Sugars</span> {totalSugars?.value}{totalSugars?.unit}</span>
+          <span><span className="font-bold not-italic">Sugars</span> {showValue(totalSugars)}</span>
         </div>
         <div className="flex justify-between text-[0.98rem] ml-4 italic border-b border-black">
-          <span><span className="font-bold not-italic">Added Sugars</span> {addedSugars?.value}{addedSugars?.unit}</span>
+          <span><span className="font-bold not-italic">Added Sugars</span> {showValue(addedSugars)}</span>
         </div>
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Protein</span> <span className="font-normal">{protein?.value}{protein?.unit}</span></span>
+          <span><span className="font-bold">Protein</span> <span className="font-normal">{showValue(protein)}</span></span>
           <span>{protein?.daily_value_intake_percent ? <span className="font-bold">{`${protein.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Vitamin D</span> <span className="font-normal">{vitaminD?.value}{vitaminD?.unit}</span></span>
+          <span><span className="font-bold">Vitamin D</span> <span className="font-normal">{showValue(vitaminD)}</span></span>
           <span>{vitaminD?.daily_value_intake_percent ? <span className="font-bold">{`${vitaminD.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Calcium</span> <span className="font-normal">{calcium?.value}{calcium?.unit}</span></span>
+          <span><span className="font-bold">Calcium</span> <span className="font-normal">{showValue(calcium)}</span></span>
           <span>{calcium?.daily_value_intake_percent ? <span className="font-bold">{`${calcium.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Iron</span> <span className="font-normal">{iron?.value}{iron?.unit}</span></span>
+          <span><span className="font-bold">Iron</span> <span className="font-normal">{showValue(iron)}</span></span>
           <span>{iron?.daily_value_intake_percent ? <span className="font-bold">{`${iron.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
         <div className="flex justify-between text-[1.05rem] border-0 border-b border-black font-bold">
-          <span><span className="font-bold">Potassium</span> <span className="font-normal">{potassium?.value}{potassium?.unit}</span></span>
+          <span><span className="font-bold">Potassium</span> <span className="font-normal">{showValue(potassium)}</span></span>
           <span>{potassium?.daily_value_intake_percent ? <span className="font-bold">{`${potassium.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
       </div>
