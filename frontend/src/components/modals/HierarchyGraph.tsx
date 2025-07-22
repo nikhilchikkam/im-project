@@ -50,6 +50,14 @@ interface HierarchyGraphProps {
 }
 
 const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) => {
+  // Defensive checks for data, nodes, and relationships
+  if (!data || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+    return <div className="text-center text-gray-500 py-8">No hierarchy data available for this product.</div>;
+  }
+  if (!Array.isArray(data.relationships)) {
+    return <div className="text-center text-gray-500 py-8">No relationship data available for this product.</div>;
+  }
+
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
@@ -336,7 +344,7 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
                 (link.target === selectedNode && link.source === node.id)
               )
             );
-            
+            const label = node.normalized_name || node.name || '';
             return (
               <g 
                 key={node.id} 
@@ -362,7 +370,7 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
                   fill={isSelected ? "white" : "#374151"}
                   className="pointer-events-none"
                 >
-                  {(node.normalized_name || node.name).length > 12 ? (node.normalized_name || node.name).substring(0, 12) + '...' : (node.normalized_name || node.name)}
+                  {label.length > 12 ? label.substring(0, 12) + '...' : label}
                 </text>
                 <text
                   x={node.x}
