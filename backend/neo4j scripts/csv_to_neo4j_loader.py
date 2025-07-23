@@ -4,9 +4,10 @@ from neo4j import GraphDatabase, basic_auth
 from tqdm import tqdm
 
 # --- CONFIGURATION ---
-NEO4J_URI = "bolt://167.99.147.151:7687"
-NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "nutrigence.app"
+load_dotenv()
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://167.99.147.151:7687")
+NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 CSV_PATH = "product_hierarchies.csv"
 BATCH_SIZE = 1000
 

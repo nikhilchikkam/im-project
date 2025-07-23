@@ -173,7 +173,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </button>
         {onHierarchy && (
           <button 
-            className="flex-1 flex items-center justify-center gap-1 bg-purple-600 text-white rounded-lg py-2 hover:bg-purple-700 transition" 
+            className="flex-1 flex items-center justify-center gap-1 bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700 transition" 
             onClick={onHierarchy}
             title="View Product Hierarchy"
           >

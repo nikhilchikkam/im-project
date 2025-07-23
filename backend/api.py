@@ -75,6 +75,7 @@ def get_products(db: Session = Depends(get_db), class_title: str = None, family_
             conditions.append("recommended_ok = :recommended_ok")
             params['recommended_ok'] = recommended_ok
 
+
         where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
         base_query += where_clause
         count_query += where_clause
