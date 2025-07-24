@@ -74,52 +74,15 @@ const HierarchyModal: React.FC<HierarchyModalProps> = ({ isOpen, onClose, gtin }
       
       const hierarchyResult = await hierarchyResponse.json();
       
-      // Step 2: Fetch detailed product information for all nodes
-      const enrichedNodes = await Promise.all(
-        hierarchyResult.nodes.map(async (node: any) => {
-          try {
-            // Fetch product details
-            const productResponse = await fetch(`/api/products/${node.gtin}`);
-            let productData: ProductData | null = null;
-            
-            if (productResponse.ok) {
-              productData = await productResponse.json();
-            }
-            
-            // Fetch allergen information
-            const allergenResponse = await fetch(`/api/allergens/${node.gtin}`);
-            let allergenData: any[] = [];
-            
-            if (allergenResponse.ok) {
-              allergenData = await allergenResponse.json();
-            }
-            
-            return {
-              gtin: node.gtin,
-              name: node.name,
-              normalized_name: productData?.normalized_name,
-              product_type: productData?.product_type,
-              gpc_code: productData?.gpc_code,
-              family_title: productData?.family_title,
-              nutrient_available: productData?.nutrition && productData.nutrition.length > 0,
-              allergen_available: allergenData && allergenData.length > 0
-            };
-          } catch (err) {
-            console.error(`Error fetching data for GTIN ${node.gtin}:`, err);
-            // Return basic node data if API calls fail
-            return {
-              gtin: node.gtin,
-              name: node.name,
-              normalized_name: null,
-              product_type: null,
-              gpc_code: null,
-              family_title: null,
-              nutrient_available: false,
-              allergen_available: false
-            };
-          }
-        })
-      );
+      // Step 2: Use the nodes directly from the hierarchy API (no additional enrichment needed)
+      const enrichedNodes = hierarchyResult.nodes.map((node: any) => {
+        return {
+          ...node,
+          normalized_name: node.name, // Use name as normalized_name if needed
+          gpc_code: null, // Not available from hierarchy API
+          family_title: null // Not available from hierarchy API
+        };
+      });
       
       setHierarchyData({
         nodes: enrichedNodes,

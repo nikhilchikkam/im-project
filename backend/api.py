@@ -193,6 +193,23 @@ def get_product_allergens(gtin: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/diet_claims/{gtin}")
+def get_diet_claims(gtin: str, db: Session = Depends(get_db)):
+    try:
+        query = text("""
+            SELECT diet_types, claims FROM product_diet_claims WHERE gtin = :gtin
+        """)
+        result = db.execute(query, {"gtin": gtin}).fetchone()
+        if not result:
+            return {"gtin": gtin, "diet_types": [], "claims": {}}
+        return {
+            "gtin": gtin,
+            "diet_types": result.diet_types if result.diet_types else [],
+            "claims": result.claims if result.claims else {}
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True) 

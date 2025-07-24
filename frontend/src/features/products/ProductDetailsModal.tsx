@@ -7,7 +7,6 @@ import ProductDescription from './ProductDescription';
 import ProductTagsSection from './ProductTagsSection';
 import ProductDetailsLayout from '../../layouts/ProductDetailsLayout';
 
-const dummyBadges = ['Meat', 'Gluten', 'Organic'];
 const kosherTags = ['Vegan tag', 'Vegan tag', 'Vegan tag'];
 const halalTags = ['Vegan tag', 'Vegan tag', 'Vegan tag'];
 
@@ -96,12 +95,23 @@ interface NutritionSummary {
   protein_unit?: string;
 }
 
+const claimColors = [
+  'bg-blue-100 text-blue-700',
+  'bg-green-100 text-green-700',
+  'bg-yellow-100 text-yellow-700',
+  'bg-purple-100 text-purple-700',
+  'bg-pink-100 text-pink-700',
+  'bg-red-100 text-red-700',
+  'bg-gray-100 text-gray-700'
+];
+
 const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => {
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null);
   const [allergens, setAllergens] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [productDetails, setProductDetails] = useState<any | null>(null);
+  const [dietClaims, setDietClaims] = useState<{diet_types: string[], claims: Record<string, string[]>} | null>(null);
 
   useEffect(() => {
     if (!product?.gtin) return;
@@ -136,6 +146,11 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
         }
       })
       .catch(() => setAllergens([]));
+    // Fetch diet types and claims
+    fetch(`${apiUrl}/api/diet_claims/${product.gtin}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setDietClaims(data))
+      .catch(() => setDietClaims(null));
   }, [product?.gtin]);
 
   const details = productDetails || product;
@@ -162,6 +177,32 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
     protein_unit: '',
   };
 
+  const dietClaimsBlock = (
+    <div className="flex flex-col gap-2">
+      <ProductTagsSection
+        title="Diet Types"
+        tags={dietClaims?.diet_types ?? []}
+        emptyText="No data available"
+      />
+      <div className="flex flex-wrap gap-2">
+        {dietClaims && dietClaims.claims && Object.keys(dietClaims.claims).length > 0 ? (
+          Object.entries(dietClaims.claims).map(([type, tags], idx) => (
+            <ProductTagsSection
+              key={type}
+              title={type.replace(/_/g, ' ')}
+              tags={tags}
+              // @ts-ignore
+              tagClass={claimColors[idx % claimColors.length]}
+              emptyText="No data available"
+            />
+          ))
+        ) : (
+          <ProductTagsSection title="Claims" tags={[]} emptyText="No data available" />
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 md:p-8 w-full max-w-full sm:max-w-2xl md:max-w-4xl lg:max-w-5xl relative overflow-y-auto max-h-[95vh] mx-2 sm:mx-4">
@@ -177,7 +218,6 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
             <>
               <div className="text-xs text-gray-500 mb-1">UPC/GTIN: {details.gtin}</div>
               <div className="font-bold text-2xl mb-2">{details.normalized_name?.trim() ? details.normalized_name : (details.name?.trim() ? details.name : (details.title?.trim() ? details.title : 'N/A'))}</div>
-              <div className="flex gap-2 mb-2">{dummyBadges.map(b => <span key={b} className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">{b}</span>)}</div>
               <div className="flex gap-2 mb-2">
                 <button className="bg-blue-100 text-blue-700 px-4 py-2 rounded font-semibold">Wishlist</button>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded font-semibold">Cart</button>
@@ -198,18 +238,11 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
               </div>
             ) : null
           }
-          halalKosherBlock={
-            <>
-              <ProductTagsSection title="Halal" tags={halalTags} />
-              <ProductTagsSection title="Kosher" tags={kosherTags} />
-            </>
-          }
+          halalKosherBlock={dietClaimsBlock}
           allergensBlock={
-            allergens.length > 0 ? (
-              <div className="bg-gray-50 rounded-lg p-2 sm:p-4">
-                <ProductTagsSection title="Allergens" tags={allergens} />
-              </div>
-            ) : null
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-4">
+              <ProductTagsSection title="Allergens" tags={allergens} emptyText="No data available" />
+            </div>
           }
           nutritionFacts={
             loading ? <div>Loading nutrition...</div> : error ? <div className="text-red-500">{error}</div> : (

@@ -12,8 +12,8 @@ client = Content1Client()
 
 BATCH_SIZE = 100  # Number of GTINs per API call
 ITEMS_PER_FILE = 1000  # Number of products per output file
-OUTPUT_DIR = "results/products_by_gtin"
-GTIN_CSV = "missing_gtin.csv"  # Path to your GTINs CSV
+OUTPUT_DIR = "results/products_with_diet_and_claim"
+GTIN_CSV = "food_poroduct_gtins.csv"  # Path to your GTINs CSV
 
 # Use a conservative number of parallel requests. Increase if API allows.
 MAX_WORKERS = 5  # Adjust this if you know your API can handle more
@@ -39,12 +39,8 @@ def fetch_products_for_gtins(gtin_list, attempt=1):
         "fields": {
             "include": [
                 "gtin",
-                "functionalName",
-                "productDescription",
-                "ingredientStatement",
-                "brandName",
-                "productType",
-                "globalClassificationCategory"
+                "foodAndBevDietTypeInfo",
+                "productInformationDetail"
             ],
             "exclude": []
         },

@@ -142,7 +142,8 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
       
       // Calculate positions with proper spacing
       const levelWidth = Math.max(levelNodes.length, 1);
-      const x = (width * 0.8 / levelWidth) * (nodeIndex + 1) + width * 0.1;
+      const spacing = Math.max(120, width * 0.8 / levelWidth); // Minimum 120px spacing
+      const x = spacing * (nodeIndex + 1) + width * 0.1;
       const y = (height * 0.8 / (maxLevel + 1)) * (level + 1) + height * 0.1;
       
       return {
@@ -196,10 +197,6 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
           ${node.product_type ? `<div class="text-xs">Type: ${node.product_type}</div>` : ''}
           ${node.gpc_code ? `<div class="text-xs">GPC: ${node.gpc_code}</div>` : ''}
           ${node.family_title ? `<div class="text-xs">Family: ${node.family_title}</div>` : ''}
-          <div class="text-xs mt-1">
-            ${node.nutrient_available ? '<span class="text-green-600">✓ Nutrition</span>' : '<span class="text-gray-400">✗ Nutrition</span>'}
-            ${node.allergen_available ? '<span class="text-yellow-600 ml-2">✓ Allergen</span>' : '<span class="text-gray-400 ml-2">✗ Allergen</span>'}
-          </div>
         </div>
       `;
       
@@ -256,7 +253,7 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
     }
   };
 
-  const nodeRadius = 35;
+  const nodeRadius = 50;
 
   return (
     <div 
@@ -308,22 +305,29 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
             
             if (!sourceNode || !targetNode) return null;
             
+            // Calculate control points for curved lines to avoid intersections
+            const dx = targetNode.x - sourceNode.x;
+            const dy = targetNode.y - sourceNode.y;
+            const midX = sourceNode.x + dx * 0.5;
+            const midY = sourceNode.y + dy * 0.5;
+            const offset = Math.min(30, Math.abs(dx) * 0.3);
+            
+            // Create curved path
+            const path = `M ${sourceNode.x} ${sourceNode.y} Q ${midX} ${midY - offset} ${targetNode.x} ${targetNode.y}`;
+            
             return (
               <g key={`link-${index}`}>
-                <line
-                  x1={sourceNode.x}
-                  y1={sourceNode.y}
-                  x2={targetNode.x}
-                  y2={targetNode.y}
+                <path
+                  d={path}
                   stroke="#2B7CE9"
                   strokeWidth={2}
+                  fill="none"
                   markerEnd="url(#arrowhead)"
                 />
                 <text
-                  x={(sourceNode.x + targetNode.x) / 2}
-                  y={(sourceNode.y + targetNode.y) / 2}
+                  x={midX}
+                  y={midY - offset - 5}
                   textAnchor="middle"
-                  dy={-5}
                   fontSize="10"
                   fill="#666"
                   className="pointer-events-none"
