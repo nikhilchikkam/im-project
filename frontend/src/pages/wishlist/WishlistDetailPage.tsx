@@ -35,7 +35,8 @@ const WishlistDetailPage: React.FC = () => {
 
       try {
         setLoading(true);
-        const response = await fetch('/api/wishlist', {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/wishlist`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
           },
@@ -71,7 +72,8 @@ const WishlistDetailPage: React.FC = () => {
     try {
       // Delete selected items
       for (const itemId of selectedItems) {
-        await fetch(`/api/wishlist/${itemId}`, {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        await fetch(`${apiUrl}/api/wishlist/${itemId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -100,7 +102,8 @@ const WishlistDetailPage: React.FC = () => {
     try {
       // Move selected items to cart
       for (const itemId of selectedItems) {
-        await fetch('/api/cart', {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        await fetch(`${apiUrl}/api/cart`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

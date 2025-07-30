@@ -29,3 +29,4 @@ results/
 .DS_Store
 Thumbs.db
 ".idea/" 
+"backend/generate_secrets.py" 

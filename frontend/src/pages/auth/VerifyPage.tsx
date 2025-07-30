@@ -19,7 +19,8 @@ export const VerifyPage = () => {
       }
 
       try {
-        const response = await fetch('/api/auth/verify', {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/auth/verify`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -28,7 +29,7 @@ export const VerifyPage = () => {
         });
 
         // Since we can't pass token in body for GET, let's use POST
-        const postResponse = await fetch('/api/auth/verify', {
+        const postResponse = await fetch(`${apiUrl}/api/auth/verify`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

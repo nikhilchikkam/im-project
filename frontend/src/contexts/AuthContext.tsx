@@ -38,16 +38,19 @@ export const useAuth = () => {
 // Custom hook for making authenticated API calls with automatic token refresh
 export const useAuthenticatedFetch = () => {
   const { refreshAccessToken, logout, isTokenExpired } = useAuth();
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   const authenticatedFetch = useCallback(async (
     url: string, 
     options: RequestInit = {}
   ): Promise<Response> => {
     const accessToken = localStorage.getItem('accessToken');
-    
     if (!accessToken) {
       throw new Error('No access token available');
     }
+
+    // Prepend base URL if url is relative
+    const fullUrl = url.startsWith('http') ? url : `${apiUrl}${url}`;
 
     // Check if token is expired before making the request
     if (isTokenExpired(accessToken)) {
@@ -64,7 +67,7 @@ export const useAuthenticatedFetch = () => {
       'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
     };
 
-    const response = await fetch(url, {
+    const response = await fetch(fullUrl, {
       ...options,
       headers,
     });
@@ -78,22 +81,19 @@ export const useAuthenticatedFetch = () => {
           ...options.headers,
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         };
-        
-        const retryResponse = await fetch(url, {
+        const retryResponse = await fetch(fullUrl, {
           ...options,
           headers: retryHeaders,
         });
-        
         return retryResponse;
       } else {
-        // Refresh failed, logout user
         logout();
         throw new Error('Authentication failed');
       }
     }
 
     return response;
-  }, [refreshAccessToken, logout, isTokenExpired]);
+  }, [refreshAccessToken, logout, isTokenExpired, apiUrl]);
 
   return { authenticatedFetch };
 };
@@ -115,7 +115,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (accessToken && refreshToken) {
         try {
           // Verify token and get user info
-          const response = await fetch('/api/auth/me', {
+          const apiUrl = import.meta.env.VITE_API_URL || '';
+          const response = await fetch(`${apiUrl}/api/auth/me`, {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
             },
@@ -165,7 +166,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -87,8 +87,9 @@ export const SignupForm = () => {
     }
 
     try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
       // Send signup request
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch(`${apiUrl}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

@@ -25,12 +25,14 @@ const WishlistGroupsPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+
   const fetchWishlistGroups = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      const response = await fetch('/api/wishlist-groups/', {
+      const response = await fetch(`${apiUrl}/api/wishlist-groups/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
@@ -59,7 +61,7 @@ const WishlistGroupsPage: React.FC = () => {
 
   const handleCreateGroup = async (name: string, description: string, isPublic: boolean) => {
     try {
-      const response = await fetch('/api/wishlist-groups/', {
+      const response = await fetch(`${apiUrl}/api/wishlist-groups/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +93,7 @@ const WishlistGroupsPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/wishlist-groups/${groupId}`, {
+      const response = await fetch(`${apiUrl}/api/wishlist-groups/${groupId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,

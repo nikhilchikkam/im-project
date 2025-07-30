@@ -28,7 +28,8 @@ export const GoogleOAuthPage = () => {
       }
 
       try {
-        const response = await fetch('/api/auth/google/callback', {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/auth/google/callback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
