@@ -6,6 +6,7 @@ import ProductHeader from './ProductHeader';
 import ProductDescription from './ProductDescription';
 import ProductTagsSection from './ProductTagsSection';
 import ProductDetailsLayout from '../../layouts/ProductDetailsLayout';
+import { useCartWishlist } from '../../contexts/CartWishlistContext';
 
 const kosherTags = ['Vegan tag', 'Vegan tag', 'Vegan tag'];
 const halalTags = ['Vegan tag', 'Vegan tag', 'Vegan tag'];
@@ -112,6 +113,8 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
   const [error, setError] = useState<string | null>(null);
   const [productDetails, setProductDetails] = useState<any | null>(null);
   const [dietClaims, setDietClaims] = useState<{diet_types: string[], claims: Record<string, string[]>} | null>(null);
+  const [actionLoading, setActionLoading] = useState<'wishlist' | 'cart' | null>(null);
+  const { addToWishlist, addToCart, isInWishlist, isInCart } = useCartWishlist();
 
   useEffect(() => {
     if (!product?.gtin) return;
@@ -232,6 +235,26 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
     </>
   );
 
+  const handleAddToWishlist = async () => {
+    if (!product?.gtin) return;
+    setActionLoading('wishlist');
+    try {
+      await addToWishlist(product.gtin);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!product?.gtin) return;
+    setActionLoading('cart');
+    try {
+      await addToCart(product.gtin);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 md:p-8 w-full max-w-full sm:max-w-2xl md:max-w-4xl lg:max-w-5xl relative overflow-y-auto max-h-[95vh] mx-2 sm:mx-4">
@@ -248,8 +271,20 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
               <div className="text-xs text-gray-500 mb-1">UPC/GTIN: {details.gtin}</div>
               <div className="font-bold text-2xl mb-2">{details.normalized_name?.trim() ? details.normalized_name : (details.name?.trim() ? details.name : (details.title?.trim() ? details.title : 'N/A'))}</div>
               <div className="flex gap-2 mb-2">
-                <button className="bg-blue-100 text-blue-700 px-4 py-2 rounded font-semibold">Wishlist</button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded font-semibold">Cart</button>
+                <button
+                  className={`bg-blue-100 text-blue-700 px-4 py-2 rounded font-semibold ${isInWishlist(product.gtin) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  onClick={handleAddToWishlist}
+                  disabled={actionLoading === 'wishlist' || isInWishlist(product.gtin)}
+                >
+                  {actionLoading === 'wishlist' ? 'Adding...' : isInWishlist(product.gtin) ? 'Wishlisted' : 'Wishlist'}
+                </button>
+                <button
+                  className={`bg-blue-600 text-white px-4 py-2 rounded font-semibold ${isInCart(product.gtin) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  onClick={handleAddToCart}
+                  disabled={actionLoading === 'cart' || isInCart(product.gtin)}
+                >
+                  {actionLoading === 'cart' ? 'Adding...' : isInCart(product.gtin) ? 'In Cart' : 'Cart'}
+                </button>
               </div>
             </>
           }

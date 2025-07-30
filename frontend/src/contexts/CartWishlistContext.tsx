@@ -27,6 +27,7 @@ interface CartItem {
   added_at: string;
   product: {
     name: string;
+    normalized_name?: string;
     image_urls: string[] | null;
     product_type: string;
     description: string;
@@ -39,8 +40,10 @@ interface WishlistItem {
   added_at: string;
   product: {
     name: string;
+    normalized_name?: string;
     image_urls: string[] | null;
     product_type: string;
+    family_title?: string;
     description: string;
     is_smart_snack: boolean | null;
     nova_label: string | null;

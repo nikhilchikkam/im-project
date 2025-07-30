@@ -121,6 +121,10 @@ const CartDetailPage = () => {
             secondaryActionLabel="Wishlist"
           />
         )}
+        <section className="max-w-6xl mx-auto px-4 pb-12">
+          {/* Heading, actions, grid, etc. */}
+          {/* Move everything from the start of the main cart content to the end of the grid/table here */}
+        </section>
         <CartTable
           items={items}
           selectedItems={selectedItems}

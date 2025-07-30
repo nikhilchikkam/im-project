@@ -32,7 +32,7 @@ async def get_cart_items(current_user: User = Depends(get_current_user), db: Ses
         if hasattr(db, 'execute'):
             # SQLAlchemy session
             query = text("""
-                SELECT ci.*, p.name, p.image_urls, p.product_type, p.description
+                SELECT ci.*, p.name, p.normalized_name, p.image_urls, p.product_type, p.description
                 FROM cart_items ci
                 LEFT JOIN products_with_nutrition p ON ci.gtin = p.gtin
                 WHERE ci.user_id = :user_id
@@ -43,7 +43,7 @@ async def get_cart_items(current_user: User = Depends(get_current_user), db: Ses
             # psycopg2 connection
             cur = db.cursor()
             cur.execute("""
-                SELECT ci.*, p.name, p.image_urls, p.product_type, p.description
+                SELECT ci.*, p.name, p.normalized_name, p.image_urls, p.product_type, p.description
                 FROM cart_items ci
                 LEFT JOIN products_with_nutrition p ON ci.gtin = p.gtin
                 WHERE ci.user_id = %s
@@ -62,6 +62,7 @@ async def get_cart_items(current_user: User = Depends(get_current_user), db: Ses
                 "added_at": item["added_at"],
                 "product": {
                     "name": item["name"],
+                    "normalized_name": item.get("normalized_name", ""),
                     "image_urls": item["image_urls"],
                     "product_type": item["product_type"],
                     "description": item["description"]
@@ -238,7 +239,7 @@ async def get_wishlist_items(current_user: User = Depends(get_current_user), db:
         if hasattr(db, 'execute'):
             # SQLAlchemy session
             query = text("""
-                SELECT wi.*, p.name, p.image_urls, p.product_type, p.description, p.is_smart_snack, p.nova_label, p.is_good_choice
+                SELECT wi.*, p.name, p.normalized_name, p.image_urls, p.product_type, p.family_title, p.description, p.is_smart_snack, p.nova_label, p.is_good_choice
                 FROM wishlist_items wi
                 LEFT JOIN products_with_nutrition p ON wi.gtin = p.gtin
                 WHERE wi.user_id = :user_id
@@ -249,7 +250,7 @@ async def get_wishlist_items(current_user: User = Depends(get_current_user), db:
             # psycopg2 connection
             cur = db.cursor()
             cur.execute("""
-                SELECT wi.*, p.name, p.image_urls, p.product_type, p.description, p.is_smart_snack, p.nova_label, p.is_good_choice
+                SELECT wi.*, p.name, p.normalized_name, p.image_urls, p.product_type, p.family_title, p.description, p.is_smart_snack, p.nova_label, p.is_good_choice
                 FROM wishlist_items wi
                 LEFT JOIN products_with_nutrition p ON wi.gtin = p.gtin
                 WHERE wi.user_id = %s
@@ -267,8 +268,10 @@ async def get_wishlist_items(current_user: User = Depends(get_current_user), db:
                 "added_at": item["added_at"],
                 "product": {
                     "name": item["name"],
+                    "normalized_name": item.get("normalized_name", ""),
                     "image_urls": item["image_urls"],
                     "product_type": item["product_type"],
+                    "family_title": item.get("family_title", ""),
                     "description": item["description"],
                     "is_smart_snack": item["is_smart_snack"],
                     "nova_label": item["nova_label"],

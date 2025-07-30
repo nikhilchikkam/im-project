@@ -194,200 +194,203 @@ const WishlistPage = () => {
           )}
 
           {/* Tab Content */}
-          {activeTab === 'items' ? (
-            // Items Tab
-            <div className="w-full">
-              {wishlistItems.length > 0 ? (
-                <div className="flex flex-col space-y-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-semibold">Your Wishlist Items</h2>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => setViewType('card')}
-                        className={`p-2 rounded-lg ${viewType === 'card' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                      >
-                        <LayoutGrid className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => setViewType('list')}
-                        className={`p-2 rounded-lg ${viewType === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                      >
-                        <List className="h-5 w-5" />
-                      </button>
+          <section className="max-w-6xl mx-auto px-4 pb-12">
+            {activeTab === 'items' ? (
+              // Items Tab
+              <div className="w-full">
+                {wishlistItems.length > 0 ? (
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-2xl font-semibold">Your Wishlist Items</h2>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setViewType('card')}
+                          className={`p-2 rounded-lg ${viewType === 'card' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                          <LayoutGrid className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => setViewType('list')}
+                          className={`p-2 rounded-lg ${viewType === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                          <List className="h-5 w-5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Selection and Bulk Actions Bar */}
-                  {selectedItems.length > 0 && (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-md border">
-                            <input
-                              type="checkbox"
-                              checked={selectAll}
-                              onChange={handleSelectAll}
-                              className="w-4 h-4 text-blue-600"
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                              {selectedItems.length} items selected
-                            </span>
+                    
+                    {/* Selection and Bulk Actions Bar */}
+                    {selectedItems.length > 0 && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-md border">
+                              <input
+                                type="checkbox"
+                                checked={selectAll}
+                                onChange={handleSelectAll}
+                                className="w-4 h-4 text-blue-600"
+                              />
+                              <span className="text-sm font-medium text-gray-700">
+                                {selectedItems.length} items selected
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-600">Move items to:</span>
+                          
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm text-gray-600">Move items to:</span>
+                              <button
+                                onClick={handleMoveToCart}
+                                className="bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 flex items-center space-x-1"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                                </svg>
+                              </button>
+                            </div>
+                            
                             <button
-                              onClick={handleMoveToCart}
-                              className="bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 flex items-center space-x-1"
+                              onClick={handleDeleteSelected}
+                              className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 flex items-center space-x-1"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
+                              <span>Delete</span>
                             </button>
                           </div>
-                          
-                          <button
-                            onClick={handleDeleteSelected}
-                            className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 flex items-center space-x-1"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            <span>Delete</span>
-                          </button>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {viewType === 'card' ? (
-                    <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-4">
-                        {wishlistItems.map((item) => {
-                          // Handle image_urls - wishlist items have JSON object stored as string
-                          let imageUrls: string[] = [];
-                          if (item.product.image_urls) {
-                            try {
-                              // Parse JSON if it's a string, or use directly if it's already an object
-                              const imageData = typeof item.product.image_urls === 'string' 
-                                ? JSON.parse(item.product.image_urls) 
-                                : item.product.image_urls;
-                              
-                              // Extract URLs from the nested structure
-                              if (imageData && typeof imageData === 'object') {
-                                if (Array.isArray(imageData.externalFileLink)) {
-                                  imageUrls = imageUrls.concat(imageData.externalFileLink.filter(Boolean));
+                    )}
+                    
+                    {viewType === 'card' ? (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-4">
+                          {wishlistItems.map((item) => {
+                            // Debug: Log the item to see what data we're getting
+                            console.log('Wishlist item:', item);
+                            
+                            // Parse image_urls from JSON string if needed
+                            let imageUrls: string[] = [];
+                            if (item.product.image_urls) {
+                              try {
+                                const imageData = typeof item.product.image_urls === 'string' 
+                                  ? JSON.parse(item.product.image_urls) 
+                                  : item.product.image_urls;
+                                
+                                if (imageData && typeof imageData === 'object') {
+                                  if (Array.isArray(imageData.externalFileLink)) {
+                                    imageUrls = imageUrls.concat(imageData.externalFileLink.filter(Boolean));
+                                  }
+                                  if (Array.isArray(imageData.dam)) {
+                                    imageUrls = imageUrls.concat(imageData.dam.filter(Boolean));
+                                  }
                                 }
-                                if (Array.isArray(imageData.dam)) {
-                                  imageUrls = imageUrls.concat(imageData.dam.filter(Boolean));
-                                }
+                              } catch (error) {
+                                console.error('Error parsing image_urls:', error);
                               }
-                            } catch (error) {
-                              console.error('Error parsing image_urls:', error);
                             }
-                          }
-                          
-                          // Create product object with all necessary fields
-                          const product = {
-                            gtin: item.gtin,
-                            normalized_name: item.product.name,
-                            name: item.product.name,
-                            title: item.product.name,
-                            family_title: item.product.product_type || '',
-                            description: item.product.description,
-                            is_smart_snack: item.product.is_smart_snack || false,
-                            nova_label: item.product.nova_label || '',
-                            is_good_choice: item.product.is_good_choice || '',
-                            image_urls: imageUrls
-                          };
-                          
-                          return (
-                            <ProductCard
-                              key={item.id}
-                              upc={item.gtin}
-                              normalized_name={item.product.name}
-                              name={item.product.name}
-                              title={item.product.name}
-                              category={item.product.product_type || ''}
-                              description={item.product.description}
-                              isSmartSnack={item.product.is_smart_snack || false}
-                              novaLabel={item.product.nova_label || ''}
-                              isGoodChoice={item.product.is_good_choice || ''}
-                              imageUrls={imageUrls}
-                              onEnlarge={() => setSelectedProduct(product)}
-                              onHierarchy={() => handleHierarchyClick(product)}
-                              isSelected={selectedItems.includes(item.gtin)}
-                              onSelect={() => handleItemSelect(item.gtin)}
-                              showCheckbox={true}
-                            />
-                          );
-                        })}
-                      </div>
-                    </>
-                  ) : (
-                    <ProductTable 
-                      products={wishlistItems.map(item => ({
-                        id: item.gtin,
-                        category: item.product.product_type || 'General',
-                        itemNumber: item.gtin,
-                        name: item.product.name,
-                        normalized_name: item.product.name,
-                        description: item.product.description || 'No description available'
-                      }))}
-                      selectedItems={selectedItems}
-                      onItemSelect={handleItemSelect}
-                      selectAll={selectAll}
-                      onSelectAll={handleSelectAll}
-                    />
-                  )}
-                </div>
-              ) : (
+                            
+                            // Create product object with all necessary fields
+                            const product = {
+                              gtin: item.gtin,
+                              normalized_name: item.product.normalized_name || item.product.name,
+                              name: item.product.normalized_name || item.product.name,
+                              title: item.product.normalized_name || item.product.name,
+                              family_title: item.product.family_title || '',
+                              description: item.product.description,
+                              is_smart_snack: item.product.is_smart_snack || false,
+                              nova_label: item.product.nova_label || '',
+                              is_good_choice: item.product.is_good_choice || '',
+                              image_urls: imageUrls
+                            };
+                            
+                            return (
+                              <ProductCard
+                                key={item.id}
+                                upc={item.gtin}
+                                normalized_name={item.product.normalized_name || item.product.name}
+                                name={item.product.normalized_name || item.product.name}
+                                title={item.product.normalized_name || item.product.name}
+                                category={item.product.family_title || ''}
+                                description={item.product.description}
+                                isSmartSnack={item.product.is_smart_snack || false}
+                                novaLabel={item.product.nova_label || undefined}
+                                isGoodChoice={item.product.is_good_choice || undefined}
+                                imageUrls={imageUrls}
+                                onEnlarge={() => setSelectedProduct(product)}
+                                onHierarchy={() => handleHierarchyClick(product)}
+                                isSelected={selectedItems.includes(item.gtin)}
+                                onSelect={() => handleItemSelect(item.gtin)}
+                                showCheckbox={true}
+                              />
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <ProductTable 
+                        products={wishlistItems.map(item => ({
+                          id: item.gtin,
+                          category: item.product.product_type || 'General',
+                          itemNumber: item.gtin,
+                          name: item.product.name,
+                          normalized_name: item.product.name,
+                          description: item.product.description || 'No description available'
+                        }))}
+                        selectedItems={selectedItems}
+                        onItemSelect={handleItemSelect}
+                        selectAll={selectAll}
+                        onSelectAll={handleSelectAll}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-center py-20 w-full">
+                    <img src="/wishlist-welcome.png" alt="Empty wishlist" className="w-48 h-48 mb-8" />
+                    <h2 className="text-2xl font-semibold mb-2">Your wishlist is empty!</h2>
+                    <p className="text-gray-600 mb-6">Start adding products to your wishlist to see them here.</p>
+                    <Link to="/products">
+                      <button className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">
+                        Continue Shopping
+                      </button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Groups Tab
+              <div className="w-full">
                 <div className="flex flex-col items-center justify-center text-center py-20 w-full">
-                  <img src="/wishlist-welcome.png" alt="Empty wishlist" className="w-48 h-48 mb-8" />
-                  <h2 className="text-2xl font-semibold mb-2">Your wishlist is empty!</h2>
-                  <p className="text-gray-600 mb-6">Start adding products to your wishlist to see them here.</p>
-                  <Link to="/">
-                    <button className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">
-                      Browse Products
-                    </button>
-                  </Link>
-                </div>
-              )}
-            </div>
-          ) : (
-            // Groups Tab
-            <div className="w-full">
-              <div className="flex flex-col items-center justify-center text-center py-20 w-full">
-                <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
-                  <svg className="w-12 h-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-semibold mb-2">Under Construction</h2>
-                <p className="text-gray-600 mb-6">Wishlist groups feature is coming soon!</p>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md">
-                  <p className="text-sm text-blue-800">
-                    We're working on bringing you the ability to organize your wishlist items into groups. 
-                    Stay tuned for updates!
-                  </p>
+                  <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-12 h-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-semibold mb-2">Under Construction</h2>
+                  <p className="text-gray-600 mb-6">Wishlist groups feature is coming soon!</p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md">
+                    <p className="text-sm text-blue-800">
+                      We're working on bringing you the ability to organize your wishlist items into groups. 
+                      Stay tuned for updates!
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </section>
         </div>
 
         {/* Right: Action buttons */}
         <div className="flex flex-col space-y-4 mt-8">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/products')}
             className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            Find Products
+            Continue Shopping
           </button>
         </div>
       </div>

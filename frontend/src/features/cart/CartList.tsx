@@ -12,6 +12,7 @@ interface CartItem {
     image_urls: string[] | null;
     product_type: string;
     description: string;
+    normalized_name?: string;
   };
 }
 
@@ -164,14 +165,14 @@ const CartItemComponent = ({
         </div>
 
         {/* Product Details */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg mb-2">{item.product.name}</h3>
-          <p className="text-gray-600 text-sm mb-2 line-clamp-2">{item.product.description}</p>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <span>{item.product.product_type}</span>
-            <span>•</span>
-            <span>Added {new Date(item.added_at).toLocaleDateString()}</span>
-          </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-lg mb-1">
+            {item.product.normalized_name || item.product.name}
+          </h3>
+          <p className="text-gray-600 text-sm mb-2">
+            {item.product.description || 'No description available'}
+          </p>
+          <p className="text-sm text-gray-500">UPC/GTIN: {item.gtin}</p>
         </div>
 
         {/* Quantity Controls */}
