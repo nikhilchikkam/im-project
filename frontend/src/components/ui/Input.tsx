@@ -8,9 +8,10 @@ type InputProps = {
   error?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
 };
 
-export const Input = ({ label, type = 'text', placeholder, error, value, onChange }: InputProps) => {
+export const Input = ({ label, type = 'text', placeholder, error, value, onChange, disabled }: InputProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
 
@@ -23,9 +24,10 @@ export const Input = ({ label, type = 'text', placeholder, error, value, onChang
           placeholder={placeholder}
           value={value}
           onChange={onChange}
+          disabled={disabled}
           className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2480f8] ${
             error ? 'border-[#FF2E1F]' : 'border-[#d2d2d2]'
-          }`}
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         />
         {isPassword && (
           <button

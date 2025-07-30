@@ -3,7 +3,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
 
-export const LoginForm = () => {
+export const MagicLinkForm = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -52,7 +52,7 @@ export const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-2xl font-bold text-center">Login</h2>
+      <h2 className="text-2xl font-bold text-center">Login with Magic Link</h2>
       <p className="text-sm text-gray-600 text-center">
         Enter your email and we'll send you a secure login link
       </p>
@@ -70,7 +70,7 @@ export const LoginForm = () => {
       />
 
       <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? 'Sending...' : 'Send Login Link'}
+        {isLoading ? 'Sending...' : 'Send Magic Link'}
       </Button>
 
       <div className="flex items-center gap-4 my-4">
@@ -96,9 +96,9 @@ export const LoginForm = () => {
 
       <div className="text-center text-sm mt-4">
         <Link to="/signup" className="text-blue-600 hover:underline">
-          New User? <span className="text-blue-600 hover:underline cursor-pointer">Sign Up</span>
+          New User? Sign Up
         </Link>
       </div>
     </form>
   );
-};
+}; 

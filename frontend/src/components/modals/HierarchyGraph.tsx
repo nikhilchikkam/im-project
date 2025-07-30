@@ -7,8 +7,6 @@ interface HierarchyNode {
   product_type?: string;
   gpc_code?: string;
   family_title?: string;
-  nutrient_available?: boolean;
-  allergen_available?: boolean;
 }
 
 interface HierarchyRelationship {
@@ -22,16 +20,8 @@ interface HierarchyData {
   relationships: HierarchyRelationship[];
 }
 
-interface GraphNode {
+interface GraphNode extends HierarchyNode {
   id: string;
-  gtin: string;
-  name: string;
-  normalized_name?: string;
-  product_type?: string;
-  gpc_code?: string;
-  family_title?: string;
-  nutrient_available?: boolean;
-  allergen_available?: boolean;
   x: number;
   y: number;
   level: number;
@@ -50,14 +40,6 @@ interface HierarchyGraphProps {
 }
 
 const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) => {
-  // Defensive checks for data, nodes, and relationships
-  if (!data || !Array.isArray(data.nodes) || data.nodes.length === 0) {
-    return <div className="text-center text-gray-500 py-8">No hierarchy data available for this product.</div>;
-  }
-  if (!Array.isArray(data.relationships)) {
-    return <div className="text-center text-gray-500 py-8">No relationship data available for this product.</div>;
-  }
-
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
@@ -74,111 +56,69 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
   });
 
   useEffect(() => {
-    if (!data || !svgRef.current) return;
-
-    // Process data to create graph structure
+    if (!data || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+      setGraphNodes([]);
+      setGraphLinks([]);
+      return;
+    }
     const { nodes, relationships } = data;
-    
-    // Create node map
-    const nodeMap = new Map(nodes.map(node => [node.gtin, node]));
-    
-    // Build hierarchy levels
+    // Assign levels using BFS
     const levels = new Map<string, number>();
     const children = new Map<string, string[]>();
-    
-    // Initialize children map
     relationships.forEach(rel => {
-      if (!children.has(rel.source)) {
-        children.set(rel.source, []);
-      }
+      if (!children.has(rel.source)) children.set(rel.source, []);
       children.get(rel.source)!.push(rel.target);
     });
-    
-    // Calculate levels using BFS
-    const visited = new Set<string>();
-    const queue: { gtin: string; level: number }[] = [];
-    
-    // Find root nodes (nodes that are not targets)
     const targetGtins = new Set(relationships.map(rel => rel.target));
-    const rootGtins = nodes
-      .map(node => node.gtin)
-      .filter(gtin => !targetGtins.has(gtin));
-    
-    rootGtins.forEach(gtin => {
-      queue.push({ gtin, level: 0 });
-      visited.add(gtin);
-    });
-    
+    const rootGtins = nodes.map(node => node.gtin).filter(gtin => !targetGtins.has(gtin));
+    const queue: { gtin: string; level: number }[] = rootGtins.map(gtin => ({ gtin, level: 0 }));
+    const visited = new Set<string>();
     while (queue.length > 0) {
       const { gtin, level } = queue.shift()!;
+      if (visited.has(gtin)) continue;
+      visited.add(gtin);
       levels.set(gtin, level);
-      
-      const childGtins = children.get(gtin) || [];
-      childGtins.forEach(childGtin => {
-        if (!visited.has(childGtin)) {
-          queue.push({ gtin: childGtin, level: level + 1 });
-          visited.add(childGtin);
-        }
+      (children.get(gtin) || []).forEach(childGtin => {
+        queue.push({ gtin: childGtin, level: level + 1 });
       });
     }
-    
-    // Calculate max levels and nodes per level
-    const maxLevel = Math.max(...levels.values(), 0);
+    // Assign positions
     const nodesPerLevel = new Map<number, string[]>();
-    
     nodes.forEach(node => {
       const level = levels.get(node.gtin) || 0;
-      if (!nodesPerLevel.has(level)) {
-        nodesPerLevel.set(level, []);
-      }
+      if (!nodesPerLevel.has(level)) nodesPerLevel.set(level, []);
       nodesPerLevel.get(level)!.push(node.gtin);
     });
-    
-    // Create graph nodes with positions
+    const nodeRadius = 50;
     const graphNodes: GraphNode[] = nodes.map(node => {
       const level = levels.get(node.gtin) || 0;
       const levelNodes = nodesPerLevel.get(level) || [];
       const nodeIndex = levelNodes.indexOf(node.gtin);
-      
-      // Calculate positions with proper spacing
       const levelWidth = Math.max(levelNodes.length, 1);
-      const spacing = Math.max(120, width * 0.8 / levelWidth); // Minimum 120px spacing
+      const spacing = Math.max(120, width * 0.8 / levelWidth);
       const x = spacing * (nodeIndex + 1) + width * 0.1;
-      const y = (height * 0.8 / (maxLevel + 1)) * (level + 1) + height * 0.1;
-      
+      const y = (height * 0.8 / (Math.max(...Array.from(nodesPerLevel.keys())) + 1)) * (level + 1) + height * 0.1;
       return {
+        ...node,
         id: node.gtin,
-        gtin: node.gtin,
-        name: node.name,
-        normalized_name: node.normalized_name,
-        product_type: node.product_type,
-        gpc_code: node.gpc_code,
-        family_title: node.family_title,
-        nutrient_available: node.nutrient_available,
-        allergen_available: node.allergen_available,
         x,
         y,
         level
       };
     });
-    
     setGraphNodes(graphNodes);
     setGraphLinks(relationships);
-    
-    // Center the graph initially
+    // Center the graph
     if (graphNodes.length > 0) {
       const centerX = width / 2;
       const centerY = height / 2;
       const graphCenterX = graphNodes.reduce((sum, node) => sum + node.x, 0) / graphNodes.length;
       const graphCenterY = graphNodes.reduce((sum, node) => sum + node.y, 0) / graphNodes.length;
-      
-      setTransform({
-        x: centerX - graphCenterX,
-        y: centerY - graphCenterY,
-        scale: 1
-      });
+      setTransform({ x: centerX - graphCenterX, y: centerY - graphCenterY, scale: 1 });
     }
   }, [data, width, height]);
+
+  const nodeRadius = 50;
 
   const handleNodeClick = (nodeId: string) => {
     setSelectedNode(selectedNode === nodeId ? null : nodeId);
@@ -189,7 +129,6 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
     if (rect) {
       const x = event.clientX - rect.left + 10;
       const y = event.clientY - rect.top - 10;
-      
       const content = `
         <div class="text-sm">
           <div class="font-bold mb-1">${node.normalized_name || node.name}</div>
@@ -199,7 +138,6 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
           ${node.family_title ? `<div class="text-xs">Family: ${node.family_title}</div>` : ''}
         </div>
       `;
-      
       setTooltip({ show: true, content, x, y });
     }
   };
@@ -209,7 +147,7 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 0) { // Left click only
+    if (e.button === 0) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
     }
@@ -232,10 +170,7 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const scale = Math.max(0.1, Math.min(3, transform.scale - e.deltaY * 0.001));
-    setTransform({
-      ...transform,
-      scale
-    });
+    setTransform({ ...transform, scale });
   };
 
   const resetView = () => {
@@ -244,19 +179,12 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
       const centerY = height / 2;
       const graphCenterX = graphNodes.reduce((sum, node) => sum + node.x, 0) / graphNodes.length;
       const graphCenterY = graphNodes.reduce((sum, node) => sum + node.y, 0) / graphNodes.length;
-      
-      setTransform({
-        x: centerX - graphCenterX,
-        y: centerY - graphCenterY,
-        scale: 1
-      });
+      setTransform({ x: centerX - graphCenterX, y: centerY - graphCenterY, scale: 1 });
     }
   };
 
-  const nodeRadius = 50;
-
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative border border-gray-300 rounded-lg bg-white overflow-hidden"
       style={{ width, height }}
@@ -271,7 +199,6 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
           Reset
         </button>
       </div>
-      
       <svg
         ref={svgRef}
         width={width}
@@ -296,25 +223,20 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
             <polygon points="0 0, 10 3.5, 0 7" fill="#2B7CE9" />
           </marker>
         </defs>
-        
         <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}>
           {/* Links */}
           {graphLinks.map((link, index) => {
             const sourceNode = graphNodes.find(n => n.id === link.source);
             const targetNode = graphNodes.find(n => n.id === link.target);
-            
             if (!sourceNode || !targetNode) return null;
-            
             // Calculate control points for curved lines to avoid intersections
             const dx = targetNode.x - sourceNode.x;
             const dy = targetNode.y - sourceNode.y;
             const midX = sourceNode.x + dx * 0.5;
             const midY = sourceNode.y + dy * 0.5;
             const offset = Math.min(30, Math.abs(dx) * 0.3);
-            
             // Create curved path
             const path = `M ${sourceNode.x} ${sourceNode.y} Q ${midX} ${midY - offset} ${targetNode.x} ${targetNode.y}`;
-            
             return (
               <g key={`link-${index}`}>
                 <path
@@ -337,30 +259,22 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
               </g>
             );
           })}
-          
           {/* Nodes */}
-          {graphNodes.map((node) => {
+          {graphNodes.map((node, index) => {
             const isSelected = selectedNode === node.id;
-            const isHighlighted = selectedNode && (
-              selectedNode === node.id ||
-              graphLinks.some(link => 
-                (link.source === selectedNode && link.target === node.id) ||
-                (link.target === selectedNode && link.source === node.id)
-              )
-            );
             const label = node.normalized_name || node.name || '';
             return (
-              <g 
-                key={node.id} 
+              <g
+                key={node.id}
                 onClick={() => handleNodeClick(node.id)}
-                onMouseEnter={(e) => handleNodeMouseEnter(node, e)}
+                onMouseEnter={e => handleNodeMouseEnter(node, e)}
                 onMouseLeave={handleNodeMouseLeave}
               >
                 <circle
                   cx={node.x}
                   cy={node.y}
                   r={nodeRadius}
-                  fill={isSelected ? "#3B82F6" : isHighlighted ? "#93C5FD" : "#E5E7EB"}
+                  fill={isSelected ? "#3B82F6" : "#E5E7EB"}
                   stroke={isSelected ? "#1D4ED8" : "#9CA3AF"}
                   strokeWidth={isSelected ? 3 : 2}
                   className="cursor-pointer hover:stroke-blue-500 transition-colors"
@@ -386,60 +300,19 @@ const HierarchyGraph: React.FC<HierarchyGraphProps> = ({ data, width, height }) 
                 >
                   {node.gtin}
                 </text>
-                {/* Additional info indicators */}
-                {node.nutrient_available && (
-                  <circle
-                    cx={node.x - 15}
-                    cy={node.y - 15}
-                    r="3"
-                    fill="#10B981"
-                    className="pointer-events-none"
-                  />
-                )}
-                {node.allergen_available && (
-                  <circle
-                    cx={node.x + 15}
-                    cy={node.y - 15}
-                    r="3"
-                    fill="#F59E0B"
-                    className="pointer-events-none"
-                  />
-                )}
               </g>
             );
           })}
         </g>
       </svg>
-      
       {/* Tooltip */}
       {tooltip.show && (
-        <div 
-          className="absolute z-20 bg-white border border-gray-300 rounded-lg shadow-lg p-2 max-w-xs"
-          style={{ 
-            left: tooltip.x, 
-            top: tooltip.y,
-            transform: 'translateY(-100%)'
-          }}
+        <div
+          className="absolute z-20 pointer-events-none"
+          style={{ left: tooltip.x, top: tooltip.y }}
           dangerouslySetInnerHTML={{ __html: tooltip.content }}
         />
       )}
-      
-      {/* Instructions */}
-      <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white bg-opacity-90 px-2 py-1 rounded">
-        Drag to pan • Scroll to zoom • Click nodes to highlight • Hover for details
-      </div>
-      
-      {/* Legend */}
-      <div className="absolute top-2 left-2 text-xs text-gray-600 bg-white bg-opacity-90 px-2 py-1 rounded">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-          <span>Nutrition data</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <span>Allergen data</span>
-        </div>
-      </div>
     </div>
   );
 };

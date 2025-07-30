@@ -9,6 +9,10 @@ interface ProductResultsProps {
   error: string | null;
   viewType: 'card' | 'list';
   setSelectedProduct: (product: any) => void;
+  selectedItems?: string[];
+  onItemSelect?: (gtin: string) => void;
+  selectAll?: boolean;
+  onSelectAll?: () => void;
 }
 
 const ProductResults: React.FC<ProductResultsProps> = ({
@@ -17,6 +21,10 @@ const ProductResults: React.FC<ProductResultsProps> = ({
   error,
   viewType,
   setSelectedProduct,
+  selectedItems = [],
+  onItemSelect,
+  selectAll = false,
+  onSelectAll,
 }) => {
   const [hierarchyModal, setHierarchyModal] = useState<{
     isOpen: boolean;
@@ -74,6 +82,9 @@ const ProductResults: React.FC<ProductResultsProps> = ({
                 imageUrls={imageUrls}
                 onEnlarge={() => setSelectedProduct(p)}
                 onHierarchy={() => handleHierarchyClick(p)}
+                isSelected={selectedItems.includes(p.gtin)}
+                onSelect={() => onItemSelect?.(p.gtin)}
+                showCheckbox={true}
               />
             );
           })}
@@ -91,14 +102,20 @@ const ProductResults: React.FC<ProductResultsProps> = ({
   
   return (
     <div className="mt-4">
-      <ProductTable products={products.map(p => ({
-        id: p.gtin,
-        category: p.family_title || '',
-        itemNumber: p.gtin,
-        name: p.name || p.title,
-        normalized_name: p.normalized_name,
-        description: p.description,
-      }))} />
+      <ProductTable 
+        products={products.map(p => ({
+          id: p.gtin,
+          category: p.family_title || '',
+          itemNumber: p.gtin,
+          name: p.name || p.title,
+          normalized_name: p.normalized_name,
+          description: p.description,
+        }))}
+        selectedItems={selectedItems}
+        onItemSelect={onItemSelect}
+        selectAll={selectAll}
+        onSelectAll={onSelectAll}
+      />
     </div>
   );
 };

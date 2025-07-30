@@ -4,3 +4,10 @@ psycopg2-binary
 python-dotenv
 SQLAlchemy
 neo4j
+PyJWT
+passlib[bcrypt]
+python-multipart
+fastapi-mail
+httpx
+authlib
+itsdangerous

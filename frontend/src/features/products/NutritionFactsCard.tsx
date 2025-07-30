@@ -131,6 +131,9 @@ const NutritionFactsCard: React.FC<Props> = ({ servingInfo, nutrients }) => {
           <span>{potassium?.daily_value_intake_percent ? <span className="font-bold">{`${potassium.daily_value_intake_percent}%`}</span> : ''}</span>
         </div>
       </div>
+      <div className="text-xs text-gray-600 mt-2 px-3 pb-2">
+        * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.
+      </div>
     </div>
   );
 };

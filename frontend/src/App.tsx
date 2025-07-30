@@ -1,5 +1,7 @@
 // src/App.tsx
 import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { CartWishlistProvider } from './contexts/CartWishlistContext';
 import AuthLandingPage from './pages/auth/AuthLandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -16,34 +18,42 @@ import UserProfilePage from './pages/profile/UserProfilePage';
 import CartDetailPage from './pages/cart/CartDetailPage';
 import CorporateProfilePage from './pages/profile/CorporateProfilePage';
 import SubscriptionPage from './pages/checkout/SubscriptionPage';
+import { MagicLinkVerificationPage } from './pages/auth/MagicLinkVerificationPage';
+import { GoogleOAuthPage } from './pages/auth/GoogleOAuthPage';
 
 const App = () => {
   return (
-    <Routes>
-      
-      <Route path="/" element={<LandingPage />} />
+    <AuthProvider>
+      <CartWishlistProvider>
+        <Routes>
+        <Route path="/" element={<LandingPage />} />
 
-      <Route path="/auth" element={<AuthLandingPage />} />
+        <Route path="/auth" element={<AuthLandingPage />} />
 
-      
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+        {/* Authentication Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/auth/verify" element={<MagicLinkVerificationPage />} />
+        <Route path="/login/google" element={<GoogleOAuthPage />} />
 
-      
-      <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/resources" element={<ResourcesPage />} />
-      <Route path="/contact" element={<ContactPage />} />
+        {/* Info Pages */}
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/resources" element={<ResourcesPage />} />
+        <Route path="/contact" element={<ContactPage />} />
 
-      <Route path="/products" element={<HomePage />} />
-      <Route path="/wishlist" element={<WishlistPage />} />
-      <Route path="/wishlist/:id" element={<WishlistDetailPage />} />
-      <Route path="/cart" element={<CartPage />} />
-      <Route path="/cart/detail" element={<CartDetailPage />} />
-      <Route path="/profile" element={<UserProfilePage />} />
-      <Route path="/profile/corporate" element={<CorporateProfilePage />} />
-      <Route path="/subscription" element={<SubscriptionPage />} />
-    </Routes>
+        {/* App Routes */}
+        <Route path="/products" element={<HomePage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/wishlist/:id" element={<WishlistDetailPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/cart/detail" element={<CartDetailPage />} />
+        <Route path="/profile" element={<UserProfilePage />} />
+        <Route path="/profile/corporate" element={<CorporateProfilePage />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
+        </Routes>
+      </CartWishlistProvider>
+    </AuthProvider>
   );
 };
 

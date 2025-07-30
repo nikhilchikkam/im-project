@@ -7,6 +7,7 @@ import CartTable from '../../features/cart/CartTable';
 import type { DataItem } from '../../components/ui/DataTable';
 import AddToWishlistModal from '../../features/wishlist/AddToWishlistModal';
 import ShareModal from '../../components/modals/ShareModal';
+import { useCartWishlist } from '../../contexts/CartWishlistContext';
 
 // Mock data based on the image
 const mockCartItems: DataItem[] = Array.from({ length: 11 }).map((_, i) => ({
@@ -19,6 +20,7 @@ const mockCartItems: DataItem[] = Array.from({ length: 11 }).map((_, i) => ({
 
 const CartDetailPage = () => {
   const navigate = useNavigate();
+  const { addToWishlist } = useCartWishlist();
   const [items, setItems] = useState<DataItem[]>(mockCartItems);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [cartTitle, setCartTitle] = useState('My Cart');
@@ -42,11 +44,36 @@ const CartDetailPage = () => {
     setSelectedItems(prev => prev.filter(itemId => itemId !== id));
   };
   
-  const handleMoveToWishlist = (id: string) => {
-    const item = items.find(i => i.id === id);
-    if (item) {
-      setItemToMove(item);
+  const handleMoveToWishlist = async () => {
+    try {
+      for (const itemId of selectedItems) {
+        await addToWishlist(itemId);
+      }
+      setSelectedItems([]);
+    } catch (error) {
+      console.error('Failed to move items to wishlist:', error);
     }
+  };
+
+  const handleMoveToWishlistGroup = async (wishlistId: string) => {
+    try {
+      const itemToMove = items.find(item => item.id === selectedItems[0]);
+      if (itemToMove) {
+        await addToWishlist(itemToMove.itemNumber);
+        setSelectedItems([]);
+      }
+    } catch (error) {
+      console.error('Failed to move item to wishlist group:', error);
+    }
+  };
+
+  const handleShare = () => {
+    setIsShareModalOpen(true);
+  };
+  
+  const handleShareOption = (option: 'link' | 'email') => {
+    // TODO: Implement sharing functionality
+    setIsShareModalOpen(false);
   };
 
   const handleBulkDelete = () => {
@@ -57,25 +84,17 @@ const CartDetailPage = () => {
   const handleClearSelection = () => {
     setSelectedItems([]);
   };
-  
+
   const handleBulkMoveToWishlist = () => {
-    console.log(`Moving items ${selectedItems.join(', ')} to wishlist`);
+    // TODO: Implement bulk move to wishlist
+    setSelectedItems([]);
   };
 
-  const handleAddToWishlistAndCloseModal = (wishlistId: string) => {
+  const handleAddToWishlistAndCloseModal = async (wishlistId?: string) => {
     if (itemToMove) {
-      console.log(`Moving item ${itemToMove.id} to wishlist ${wishlistId}`);
-      setItemToMove(null); 
+      // TODO: Implement add to wishlist
+      setItemToMove(null);
     }
-  };
-
-  const handleShare = () => {
-    setIsShareModalOpen(true);
-  };
-  
-  const handleShareOption = (option: 'link' | 'email') => {
-    console.log(`Sharing via ${option}`);
-    setIsShareModalOpen(false);
   };
 
   const handleBack = () => navigate('/cart');

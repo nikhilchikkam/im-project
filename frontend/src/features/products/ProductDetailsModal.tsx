@@ -153,6 +153,15 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
       .catch(() => setDietClaims(null));
   }, [product?.gtin]);
 
+  useEffect(() => {
+    if (!product?.gtin) return;
+    // Prevent background scroll
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const details = productDetails || product;
   const nutritionFacts = nutritionData ? mapNutritionFacts(nutritionData.nutrients) : {};
   const nutritionSummary = nutritionData ? mapNutritionSummary(nutritionData.nutrients) : {};
@@ -203,6 +212,26 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
     </div>
   );
 
+  // Placeholder: Replace with actual cuisine and claim tags from your data/API
+  const cuisineTags = details.cuisineTags || [];
+  const claimTags = details.claimTags || [];
+
+  const cuisineAndClaimBlock = (
+    <>
+      <div className="flex gap-4 mb-2">
+        <div className="flex-1">
+          <ProductTagsSection title="Cuisine" tags={cuisineTags} emptyText="No data available" />
+        </div>
+        <div className="flex-1">
+          <ProductTagsSection title="Claim" tags={claimTags} emptyText="No data available" />
+        </div>
+      </div>
+      <div className="mb-4">
+        <ProductTagsSection title="Allergens" tags={allergens} emptyText="No data available" />
+      </div>
+    </>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 md:p-8 w-full max-w-full sm:max-w-2xl md:max-w-4xl lg:max-w-5xl relative overflow-y-auto max-h-[95vh] mx-2 sm:mx-4">
@@ -230,20 +259,8 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
               <div className="text-sm text-gray-700 mb-4"><ProductDescription description={details.description} /></div>
             </>
           }
-          ingredientsBlock={
-            details.ingredients ? (
-              <div>
-                <div className="font-semibold text-base mb-1">Ingredients</div>
-                <div className="text-sm text-gray-700 whitespace-pre-line">{details.ingredients}</div>
-              </div>
-            ) : null
-          }
-          halalKosherBlock={dietClaimsBlock}
-          allergensBlock={
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-4">
-              <ProductTagsSection title="Allergens" tags={allergens} emptyText="No data available" />
-            </div>
-          }
+          halalKosherBlock={cuisineAndClaimBlock}
+          allergensBlock={null}
           nutritionFacts={
             loading ? <div>Loading nutrition...</div> : error ? <div className="text-red-500">{error}</div> : (
               <NutritionFactsCard
@@ -256,6 +273,14 @@ const ProductDetailsModal = ({ product, onClose }: ProductDetailsModalProps) => 
             loading ? <div>Loading summary...</div> : error ? <div className="text-red-500">{error}</div> : (
               <NutritionSummaryCard summary={summary} />
             )
+          }
+          ingredientsBlock={
+            details.ingredients ? (
+              <div>
+                <div className="font-semibold text-base mb-1">Ingredients</div>
+                <div className="text-sm text-gray-700 whitespace-pre-line">{details.ingredients}</div>
+              </div>
+            ) : null
           }
         />
       </div>

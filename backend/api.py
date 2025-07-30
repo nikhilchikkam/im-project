@@ -5,16 +5,19 @@ from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from neo4j_api import router as neo4j_router
+from auth_api import router as auth_router
+from cart_wishlist_api import router as cart_wishlist_router
+from wishlist_groups_api import router as wishlist_groups_router
+from auth import get_db
 
-load_dotenv(dotenv_path="db scripts/.env")
+# Load environment variables
+load_dotenv()
 
 # Database connection
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
 
 app = FastAPI()
 
@@ -24,16 +27,59 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",  # for local development
         "https://nutrigence-app-d2jla.ondigitalocean.app",  # for production
-        "https://nutrigence.app"  # custom domain
+        "https://nutrigence.app",  # custom domain
+        os.getenv("FRONTEND_URL", "https://nutrigence.app")  # from environment
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include Neo4j router
+# Include routers
 app.include_router(neo4j_router)
+app.include_router(auth_router)
+app.include_router(cart_wishlist_router)
+app.include_router(wishlist_groups_router)
 
+# Only include test router in development
+if os.getenv("ENVIRONMENT", "production") == "development":
+    from test_auth_endpoint import router as test_auth_router
+    app.include_router(test_auth_router)
+
+# Test endpoint for debugging (only in development)
+if os.getenv("ENVIRONMENT", "production") == "development":
+    @app.get("/api/test-db")
+    def test_database(db: Session = Depends(get_db)):
+        """Test database connection and wishlist tables"""
+        try:
+            # Test basic connection
+            result = db.execute(text("SELECT 1 as test")).fetchone()
+            
+            # Check if wishlist_groups table exists
+            table_check = db.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'wishlist_groups'
+            """)).fetchone()
+            
+            # Count wishlist groups
+            if table_check:
+                count_result = db.execute(text("SELECT COUNT(*) as count FROM wishlist_groups")).fetchone()
+                wishlist_count = count_result.count if count_result else 0
+            else:
+                wishlist_count = "Table not found"
+            
+            return {
+                "database_connection": "Working",
+                "wishlist_groups_table": "Exists" if table_check else "Not found",
+                "wishlist_groups_count": wishlist_count,
+                "test_query": result.test if result else "Failed"
+            }
+        except Exception as e:
+            return {
+                "error": str(e),
+                "database_connection": "Failed"
+            }
 
 # Dependency to get the database session
 def get_db():

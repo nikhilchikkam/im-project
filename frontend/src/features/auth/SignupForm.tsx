@@ -10,8 +10,6 @@ export const SignupForm = () => {
     lastName: '',
     companyName: '',
     email: '',
-    password: '',
-    confirmPassword: '',
     phone: '',
     businessId: '',
   });
@@ -42,9 +40,6 @@ export const SignupForm = () => {
       if (!form.lastName) newErrors.lastName = 'Last name is required.';
       if (!form.email) newErrors.email = 'Email is required.';
       else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) newErrors.email = 'Invalid Email';
-      if (!form.password) newErrors.password = 'Password is required.';
-      else if (form.password.length < 8) newErrors.password = 'Password must contain atleast 8 characters';
-      if (form.password !== form.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
       if (!form.businessId) newErrors.businessId = 'Business Reg Number/Tax ID/SSN is required.';
     }
     return newErrors;
@@ -77,36 +72,48 @@ export const SignupForm = () => {
   };
 
   // Handle form submit
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
     setGlobalError('');
     setSuccess('');
-    setStatus('idle');
+    setStatus('submitting');
+    
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      setStatus('idle');
       return;
     }
-    if (!simulateBackend()) {
-      setStatus('error');
-      return;
-    }
-    // Simulate success
-    if (step === 'company') {
-      setStatus('success');
-      setSuccess('Account set up request submission successful. You will receive login credentials to your registered Email Id after your account is set up.');
-    } else {
-      setStatus('verify');
-      setSuccess('Verification link sent to Inbox. Click on the link to verify your account');
-    }
-  };
 
-  // For code verification step (individual)
-  const handleCodeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('success');
-    setSuccess('Account set up request submission successful. You will receive login credentials to your registered Email Id after your account is set up.');
+    try {
+      // Send signup request
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: form.email,
+          first_name: form.firstName,
+          last_name: form.lastName,
+          company_name: form.companyName,
+          phone: form.phone,
+          business_id: form.businessId
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setStatus('verify');
+        setSuccess('Account created successfully! Magic link sent to your email to complete registration.');
+      } else {
+        setGlobalError(data.detail || 'Failed to create account. Please try again.');
+        setStatus('error');
+      }
+    } catch (error) {
+      setGlobalError('Network error. Please check your connection and try again.');
+      setStatus('error');
+    }
   };
 
   // UI rendering
@@ -126,18 +133,23 @@ export const SignupForm = () => {
       <div className="text-center space-y-6">
         <h2 className="text-2xl font-bold">Create an Account</h2>
         <p className="text-green-600">{success}</p>
-        <form onSubmit={handleCodeSubmit} className="space-y-4">
-          <div className="bg-blue-50 p-6 rounded-lg inline-block">
-            <div className="mb-2 font-semibold">Verification</div>
-            <div className="mb-2 text-sm">We have sent a code to <span className="font-medium">{form.email}</span>. Enter it below.</div>
-            <div className="flex gap-2 justify-center mb-4">
-              {[1,2,3,4,5,6].map((n) => (
-                <input key={n} className="w-10 h-10 border rounded text-center" maxLength={1} />
-              ))}
-            </div>
-            <Button type="submit" className="w-full">Login</Button>
+        <div className="bg-blue-50 p-6 rounded-lg inline-block max-w-md">
+          <div className="mb-4 font-semibold">Check Your Email</div>
+          <div className="mb-4 text-sm">
+            We've sent a magic link to <span className="font-medium">{form.email}</span>.
+            <br />
+            Click the link in your email to complete your registration.
           </div>
-        </form>
+          <div className="text-xs text-gray-600 mb-4">
+            Didn't receive the email? Check your spam folder or try again.
+          </div>
+          <Button 
+            onClick={() => setStatus('idle')} 
+            className="w-full"
+          >
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
@@ -204,22 +216,7 @@ export const SignupForm = () => {
             onChange={e => handleChange('email', e.target.value)}
             error={errors.email}
           />
-          <Input
-            label="Password"
-            type="password"
-            value={form.password}
-            placeholder="Password"
-            onChange={e => handleChange('password', e.target.value)}
-            error={errors.password}
-          />
-          <Input
-            label="Re-enter Password"
-            type="password"
-            value={form.confirmPassword}
-            placeholder="Re-enter Password"
-            onChange={e => handleChange('confirmPassword', e.target.value)}
-            error={errors.confirmPassword}
-          />
+
           <Input
             label="Business Reg Number/Tax ID/SSN"
             value={form.businessId}

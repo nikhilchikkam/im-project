@@ -1,9 +1,5 @@
 import NavbarAfter from '../components/navigation/NavbarAfter';
 import { useState, useRef, useEffect } from 'react';
-import { X, Filter, Pencil } from 'lucide-react';
-import ProductCard from '../components/product/ProductCard';
-import ProductTable from '../components/product/ProductTable';
-import { List, LayoutGrid } from 'lucide-react';
 import ProductDetailsModal from '../features/products/ProductDetailsModal';
 import Pagination from '../components/ui/Pagination';
 import HeroSection from '../components/home/HeroSection';
@@ -11,6 +7,7 @@ import MobileFilterDrawer from '../components/home/MobileFilterDrawer';
 import ProductSearchBar from '../components/home/ProductSearchBar';
 import ProductFilterBar from '../components/home/ProductFilterBar';
 import ProductResults from '../components/home/ProductResults';
+import { useCartWishlist } from '../contexts/CartWishlistContext';
 
 const categories = [
   'All Categories',
@@ -51,6 +48,7 @@ const guidelineOptions = [
 const DEFAULT_LIMIT = 12;
 
 const HomePage = () => {
+  const { addToWishlist, addToCart } = useCartWishlist();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'card' | 'list'>('card');
@@ -67,6 +65,8 @@ const HomePage = () => {
   const guidelineDropdownRef = useRef<HTMLDivElement>(null);
   const [total, setTotal] = useState(0);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
@@ -176,11 +176,64 @@ const HomePage = () => {
   }, [showGuidelineDropdown]);
 
   const handleGuidelineToggle = (guideline: string) => {
-    setSelectedGuidelines((prev) =>
-      prev.includes(guideline)
-        ? prev.filter((g) => g !== guideline)
+    setSelectedGuidelines(prev => 
+      prev.includes(guideline) 
+        ? prev.filter(g => g !== guideline)
         : [...prev, guideline]
     );
+    setPage(1);
+  };
+
+  // Selection handlers
+  const handleItemSelect = (gtin: string) => {
+    setSelectedItems(prev => 
+      prev.includes(gtin) 
+        ? prev.filter(item => item !== gtin)
+        : [...prev, gtin]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems([]);
+      setSelectAll(false);
+    } else {
+      setSelectedItems(products.map(p => p.gtin));
+      setSelectAll(true);
+    }
+  };
+
+  // Bulk action handlers
+  const handleCompare = () => {
+    if (selectedItems.length > 4) {
+      alert('You can only compare up to 4 items at a time');
+      return;
+    }
+    // TODO: Implement comparison functionality
+  };
+
+  const handleMoveToWishlist = async () => {
+    try {
+      for (const gtin of selectedItems) {
+        await addToWishlist(gtin);
+      }
+      setSelectedItems([]);
+      setSelectAll(false);
+    } catch (error) {
+      console.error('Failed to move items to wishlist:', error);
+    }
+  };
+
+  const handleMoveToCart = async () => {
+    try {
+      for (const gtin of selectedItems) {
+        await addToCart(gtin);
+      }
+      setSelectedItems([]);
+      setSelectAll(false);
+    } catch (error) {
+      console.error('Failed to move items to cart:', error);
+    }
   };
 
   // Calculate totalPages
@@ -251,13 +304,77 @@ const HomePage = () => {
         </div>
       {/* Results Section */}
       <section className="max-w-6xl mx-auto px-4 pb-12">
-        <div className="text-lg font-medium mb-4 mt-2">Search results</div>
+        <div className="text-lg font-medium mb-4 mt-2">
+          Search results for: {searchTerm || 'All Products'}
+        </div>
+        
+        {/* Selection and Bulk Actions Bar */}
+        {selectedItems.length > 0 && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-md border">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    {selectedItems.length} items selected
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Compare items (max 4):</span>
+                  <button
+                    onClick={handleCompare}
+                    disabled={selectedItems.length > 4}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <span>Compare</span>
+                  </button>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Move items to:</span>
+                  <button
+                    onClick={handleMoveToWishlist}
+                    className="bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 flex items-center space-x-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleMoveToCart}
+                    className="bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 flex items-center space-x-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <ProductResults
           products={products}
           loading={loading}
           error={error}
           viewType={viewType}
           setSelectedProduct={setSelectedProduct}
+          selectedItems={selectedItems}
+          onItemSelect={handleItemSelect}
+          selectAll={selectAll}
+          onSelectAll={handleSelectAll}
         />
         {/* Pagination */}
         <div className="flex justify-center w-full mt-8">

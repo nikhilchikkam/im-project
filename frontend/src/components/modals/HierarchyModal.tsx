@@ -53,6 +53,15 @@ const HierarchyModal: React.FC<HierarchyModalProps> = ({ isOpen, onClose, gtin }
     }
   }, [isOpen, gtin]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    // Prevent background scroll
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const fetchHierarchyData = async () => {
     setLoading(true);
     setError(null);

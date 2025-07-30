@@ -1,11 +1,13 @@
 import { Heart, ShoppingCart, User, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
+import { useCartWishlist } from '../../contexts/CartWishlistContext';
 
 const NavbarAfter = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { cartCount, wishlistCount } = useCartWishlist();
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -34,11 +36,21 @@ const NavbarAfter = () => {
       </div>
       {/* Desktop nav */}
       <div className="hidden sm:flex items-center gap-4 md:gap-10">
-        <button onClick={() => navigate('/wishlist')} className="focus:outline-none">
+        <button onClick={() => navigate('/wishlist')} className="focus:outline-none relative">
           <Heart className="w-5 h-5 md:w-8 md:h-8" />
+          {wishlistCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+              {wishlistCount > 99 ? '99+' : wishlistCount}
+            </span>
+          )}
         </button>
-        <button onClick={() => navigate('/cart')} className="focus:outline-none">
+        <button onClick={() => navigate('/cart')} className="focus:outline-none relative">
           <ShoppingCart className="w-5 h-5 md:w-8 md:h-8" />
+          {cartCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+              {cartCount > 99 ? '99+' : cartCount}
+            </span>
+          )}
         </button>
         <button onClick={() => navigate('/profile')} className="focus:outline-none">
           <User className="w-5 h-5 md:w-8 md:h-8" />
@@ -52,16 +64,30 @@ const NavbarAfter = () => {
         {mobileMenuOpen && (
           <div ref={menuRef} className="absolute right-0 top-12 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50 flex flex-col py-2">
             <button
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 text-base"
+              className="flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 text-base"
               onClick={() => { setMobileMenuOpen(false); navigate('/wishlist'); }}
             >
-              <Heart className="w-5 h-5" /> Wishlist
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5" /> Wishlist
+              </div>
+              {wishlistCount > 0 && (
+                <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
             </button>
             <button
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 text-base"
+              className="flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 text-base"
               onClick={() => { setMobileMenuOpen(false); navigate('/cart'); }}
             >
-              <ShoppingCart className="w-5 h-5" /> Cart
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5" /> Cart
+              </div>
+              {cartCount > 0 && (
+                <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
             </button>
             <button
               className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 text-base"

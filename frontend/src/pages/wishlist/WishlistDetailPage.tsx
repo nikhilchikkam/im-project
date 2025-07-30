@@ -1,26 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import NavbarAfter from '../../components/navigation/NavbarAfter';
 import Toolbar from '../../components/ui/Toolbar';
 import BulkActionsBar from '../../components/common/BulkActionsBar';
 import WishlistTable from '../../features/wishlist/WishlistTable';
 import type { DataItem } from '../../components/ui/DataTable';
 
-// Mock data
-const mockWishlistItems: DataItem[] = Array.from({ length: 11 }).map((_, i) => ({
-  id: `${i}`,
-  category: 'Meat',
-  itemNumber: '9090909090',
-  product: 'Chex Mix',
-  description: 'Description of the product goes here',
-}));
+interface WishlistItem {
+  id: string;
+  gtin: string;
+  added_at: string;
+  product: {
+    name: string;
+    description: string;
+    product_type: string;
+    image_urls: string[];
+  };
+}
 
 const WishlistDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [title, setTitle] = useState(`My Wishlist ${id}`);
-  const [items, setItems] = useState<DataItem[]>(mockWishlistItems);
+  const [items, setItems] = useState<WishlistItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchWishlistItems = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const response = await fetch('/api/wishlist', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setItems(data.items || []);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.detail || 'Failed to fetch wishlist items');
+        }
+      } catch (error) {
+        console.error('Failed to fetch wishlist items:', error);
+        setError('Failed to fetch wishlist items');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWishlistItems();
+  }, [user]);
 
   const handleSelect = (itemId: string) => {
     setSelectedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
@@ -30,9 +67,25 @@ const WishlistDetailPage: React.FC = () => {
     setSelectedItems(checked ? items.map(item => item.id) : []);
   };
 
-  const handleBulkDelete = () => {
-    setItems(prev => prev.filter(item => !selectedItems.includes(item.id)));
-    setSelectedItems([]);
+  const handleBulkDelete = async () => {
+    try {
+      // Delete selected items
+      for (const itemId of selectedItems) {
+        await fetch(`/api/wishlist/${itemId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        });
+      }
+      
+      // Remove from local state
+      setItems(prev => prev.filter(item => !selectedItems.includes(item.id)));
+      setSelectedItems([]);
+    } catch (error) {
+      console.error('Failed to delete items:', error);
+      setError('Failed to delete selected items');
+    }
   };
 
   const handleAddToList = (id: string) => {
@@ -43,10 +96,51 @@ const WishlistDetailPage: React.FC = () => {
     console.log(`More options for item ${id}`);
   };
 
-  const handleBulkMoveToCart = () => {
-    console.log(`Moving items ${selectedItems.join(', ')} to cart`);
-    // Add logic to move items to cart
+  const handleBulkMoveToCart = async () => {
+    try {
+      // Move selected items to cart
+      for (const itemId of selectedItems) {
+        await fetch('/api/cart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+          body: JSON.stringify({
+            gtin: items.find(item => item.id === itemId)?.gtin,
+            quantity: 1,
+          }),
+        });
+      }
+      
+      // Remove from wishlist after moving to cart
+      setItems(prev => prev.filter(item => !selectedItems.includes(item.id)));
+      setSelectedItems([]);
+    } catch (error) {
+      console.error('Failed to move items to cart:', error);
+      setError('Failed to move items to cart');
+    }
   };
+
+  // Convert wishlist items to DataItem format for the table
+  const tableItems: DataItem[] = items.map(item => ({
+    id: item.id,
+    category: item.product.product_type || 'General',
+    itemNumber: item.gtin,
+    product: item.product.name,
+    description: item.product.description || 'No description available',
+  }));
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Please log in</h2>
+          <p className="text-gray-600">You need to be logged in to view this wishlist.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -59,23 +153,38 @@ const WishlistDetailPage: React.FC = () => {
           onShare={() => console.log('Share action')}
           onAddItem={() => navigate('/')}
         />
-        {selectedItems.length > 0 && (
-          <BulkActionsBar
-            selectedCount={selectedItems.length}
-            onDelete={handleBulkDelete}
-            onClearSelection={() => setSelectedItems([])}
-            onSecondaryAction={handleBulkMoveToCart}
-            secondaryActionLabel="Move to Cart"
-          />
+        
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
         )}
-        <WishlistTable
-          items={items}
-          selectedItems={selectedItems}
-          onSelect={handleSelect}
-          onSelectAll={handleSelectAll}
-          onAddToList={handleAddToList}
-          onMoreOptions={handleMoreOptions}
-        />
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <>
+            {selectedItems.length > 0 && (
+              <BulkActionsBar
+                selectedCount={selectedItems.length}
+                onDelete={handleBulkDelete}
+                onClearSelection={() => setSelectedItems([])}
+                onSecondaryAction={handleBulkMoveToCart}
+                secondaryActionLabel="Move to Cart"
+              />
+            )}
+            <WishlistTable
+              items={tableItems}
+              selectedItems={selectedItems}
+              onSelect={handleSelect}
+              onSelectAll={handleSelectAll}
+              onAddToList={handleAddToList}
+              onMoreOptions={handleMoreOptions}
+            />
+          </>
+        )}
       </main>
     </div>
   );

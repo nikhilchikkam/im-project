@@ -1,5 +1,6 @@
 import { Heart, ShoppingCart, Maximize2, Network, ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useState } from 'react';
+import { useCartWishlist } from '../../contexts/CartWishlistContext';
 
 interface ProductCardProps {
   upc: string;
@@ -13,11 +14,15 @@ interface ProductCardProps {
   isGoodChoice?: string;
   isFavorite?: boolean;
   imageUrl?: string; // fallback
-  imageUrls?: string[]; // NEW: all images
+  imageUrls?: string[] | { [key: string]: string[] }; // Support both array and nested object
   onFavorite?: () => void;
   onAddToCart?: () => void;
   onEnlarge?: () => void;
   onHierarchy?: () => void;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  showCheckbox?: boolean;
+  className?: string; // Added for custom styling
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -36,150 +41,254 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onFavorite,
   onHierarchy,
+  isSelected = false,
+  onSelect,
+  showCheckbox = false,
+  className,
 }) => {
+  const { 
+    addToCart, 
+    addToWishlist, 
+    isInCart, 
+    isInWishlist, 
+    removeFromCart, 
+    removeFromWishlist,
+    loading 
+  } = useCartWishlist();
   const displayTitle = normalized_name?.trim()
     ? normalized_name
     : (name?.trim() ? name : (title?.trim() ? title : 'N/A'));
 
   // Flatten and deduplicate imageUrls if present
   let allImages: string[] = [];
-  if (imageUrls && Array.isArray(imageUrls)) {
-    allImages = imageUrls.filter(Boolean);
+  
+  if (imageUrls) {
+    if (Array.isArray(imageUrls)) {
+      // If it's already a string array
+      allImages = imageUrls.filter(Boolean);
+    } else if (typeof imageUrls === 'object') {
+      // If it's an object with nested arrays (like {dam: [...], externalFileLink: [...]})
+      const flattenedUrls: string[] = [];
+      Object.values(imageUrls).forEach(value => {
+        if (Array.isArray(value)) {
+          flattenedUrls.push(...value.filter(Boolean));
+        }
+      });
+      allImages = flattenedUrls;
+    }
   }
+  
   // fallback to imageUrl if no array
   if ((!allImages || allImages.length === 0) && imageUrl) {
     allImages = [imageUrl];
   }
 
-  const [imgIdx, setImgIdx] = useState(0);
-  const [failedIdxs, setFailedIdxs] = useState<number[]>([]);
+  // Pre-filter out known problematic URLs (like dam.catalog.1worldsync.com)
+  const preFilteredImages = allImages.filter(url => {
+    if (url && url.includes('dam.catalog.1worldsync.com')) {
+      return false;
+    }
+    return true;
+  });
 
-  // Filter out failed images
-  const validImages = allImages.filter((_, idx) => !failedIdxs.includes(idx));
-  // If all images fail, validImages will be empty
-  const currentImg = validImages.length > 0 ? validImages[imgIdx % validImages.length] : '';
+  // Ensure we have at least one image (fallback to original if all were filtered)
+  const finalImages = preFilteredImages.length > 0 ? preFilteredImages : allImages;
 
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (validImages.length === 0) return;
-    setImgIdx((idx) => (idx === 0 ? validImages.length - 1 : idx - 1));
-  };
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (validImages.length === 0) return;
-    setImgIdx((idx) => (idx === validImages.length - 1 ? 0 : idx + 1));
-  };
+  // Simple carousel state
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [imageTimestamp, setImageTimestamp] = useState(Date.now());
+  const [previousWorkingImagesLength, setPreviousWorkingImagesLength] = useState(0);
 
-  const handleImgError = () => {
-    // Mark this index as failed and try the next image
-    if (!failedIdxs.includes(imgIdx)) {
-      setFailedIdxs((prev) => [...prev, imgIdx]);
-      // Try next image if available
-      let nextIdx = imgIdx;
-      let tries = 0;
-      do {
-        nextIdx = (nextIdx + 1) % allImages.length;
-        tries++;
-      } while (failedIdxs.includes(nextIdx) && tries < allImages.length);
-      if (!failedIdxs.includes(nextIdx)) setImgIdx(nextIdx);
+  // Filter out failed images from final images
+  const workingImages = React.useMemo(() => {
+    return finalImages.filter(url => !failedImages.has(url));
+  }, [finalImages, failedImages]);
+
+  // Handle when working images change (due to failed images)
+  React.useEffect(() => {
+    if (previousWorkingImagesLength > 0 && workingImages.length < previousWorkingImagesLength) {
+      // Some images failed, adjust index if needed
+      if (currentImageIndex >= workingImages.length) {
+        setCurrentImageIndex(Math.max(0, workingImages.length - 1));
+      }
+    }
+    setPreviousWorkingImagesLength(workingImages.length);
+  }, [workingImages.length, previousWorkingImagesLength, currentImageIndex]);
+
+  const nextImage = () => {
+    if (workingImages.length > 1) {
+      const newIndex = (currentImageIndex + 1) % workingImages.length;
+      setCurrentImageIndex(newIndex);
+      setImageTimestamp(Date.now());
     }
   };
 
-  React.useEffect(() => {
-    // Reset index and failed list if images change
-    setImgIdx(0);
-    setFailedIdxs([]);
-  }, [JSON.stringify(allImages)]);
+  const prevImage = () => {
+    if (workingImages.length > 1) {
+      const newIndex = (currentImageIndex - 1 + workingImages.length) % workingImages.length;
+      setCurrentImageIndex(newIndex);
+      setImageTimestamp(Date.now());
+    }
+  };
+
+  // Handle image load errors
+  const handleImageError = (imageUrl: string) => {
+    setFailedImages(prev => new Set([...prev, imageUrl]));
+  };
+
+  // Cart and wishlist handlers
+  const handleCartClick = async () => {
+    if (isInCart(upc)) {
+      await removeFromCart(upc);
+    } else {
+      await addToCart(upc);
+    }
+  };
+
+  const handleWishlistClick = async () => {
+    if (isInWishlist(upc)) {
+      await removeFromWishlist(upc);
+    } else {
+      await addToWishlist(upc);
+    }
+  };
 
   return (
-    <div className="group border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white flex flex-col min-h-[260px] relative">
-      <div className="flex items-center justify-between mb-2 w-full">
-        <span className="text-xs text-gray-500">UPC/GTIN: {upc}</span>
-        <div className="flex items-center gap-2">
-          <input type="checkbox" />
-          {onEnlarge && (
-            <button
-              className="text-gray-400 hover:text-gray-700 p-1 rounded"
-              onClick={onEnlarge}
-              aria-label="Enlarge product details"
-            >
-              <Maximize2 className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-      </div>
-      {/* Product Image(s) or Placeholder */}
-      <div className="mb-3 flex justify-center items-center relative min-h-48 h-48">
-        {currentImg ? (
+    <div className={`bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200 min-h-[320px] flex flex-col ${className || ''}`}>
+      
+      {/* Image Section */}
+      <div className="relative h-56 bg-gray-100 overflow-hidden flex-shrink-0 group">
+        {workingImages && workingImages.length > 0 ? (
           <>
-            {/* Left navigator: always show, but disabled if only one image */}
-            <button
-              className={`absolute left-2 z-10 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 ${validImages.length > 1 ? 'hover:bg-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-              onClick={validImages.length > 1 ? handlePrev : undefined}
-              aria-label="Previous image"
-              tabIndex={0}
-              aria-disabled={validImages.length === 1}
-              disabled={validImages.length === 1}
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
             <img
-              src={currentImg}
-              alt={displayTitle}
-              className="w-full h-48 object-contain rounded-md bg-gray-50"
-              onError={handleImgError}
+              src={`${workingImages[currentImageIndex]}?t=${imageTimestamp}`}
+              alt={`${name} - Image ${currentImageIndex + 1}`}
+              className="w-full h-full object-contain"
+              key={`${currentImageIndex}-${workingImages[currentImageIndex]}-${imageTimestamp}`}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                handleImageError(target.src.split('?')[0]); // Remove cache buster
+              }}
             />
-            {/* Right navigator: always show, but disabled if only one image */}
-            <button
-              className={`absolute right-2 z-10 rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 ${validImages.length > 1 ? 'hover:bg-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-              onClick={validImages.length > 1 ? handleNext : undefined}
-              aria-label="Next image"
-              tabIndex={0}
-              aria-disabled={validImages.length === 1}
-              disabled={validImages.length === 1}
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+            {workingImages.length > 1 && (
+              <>
+                <button
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75 transition-opacity z-10 opacity-0 group-hover:opacity-100"
+                  onClick={prevImage}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75 transition-opacity z-10 opacity-0 group-hover:opacity-100"
+                  onClick={nextImage}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                {/* Image counter */}
+                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {currentImageIndex + 1} / {workingImages.length}
+                </div>
+              </>
+            )}
           </>
         ) : (
-          <div className="w-full h-48 flex flex-col items-center justify-center bg-gray-100 rounded-md text-gray-400 select-none">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a4 4 0 004 4h10a4 4 0 004-4V7a4 4 0 00-4-4H7a4 4 0 00-4 4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11a4 4 0 118 0 4 4 0 01-8 0z" /></svg>
-            <span className="text-xs">No image available</span>
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            <span className="text-sm">No image available</span>
           </div>
         )}
       </div>
-      <div className="flex flex-col flex-1">
-        <div className="font-bold text-lg mb-1 leading-tight">{displayTitle}</div>
-        <div className="mb-2 flex items-center gap-2 flex-wrap">
-          <span className="inline-block bg-green-50 text-green-700 text-xs font-semibold rounded px-2 py-1 align-middle">• {category}</span>
-          {isSmartSnack && (
-            <span className="inline-block bg-green-50 text-green-700 text-xs font-semibold rounded px-2 py-1 align-middle ml-2">Smart Snack</span>
-          )}
-          {isGoodChoice === 'true' && (
-            <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-semibold rounded px-2 py-1 align-middle ml-2">Good Choice</span>
-          )}
-          {novaLabel && (
-            <span className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold rounded px-2 py-1 align-middle ml-2">Processing Level: {novaLabel}</span>
+
+      {/* Content Section */}
+      <div className="p-4 flex flex-col flex-1">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-gray-500">UPC/GTIN: {upc}</span>
+          <div className="flex items-center gap-2">
+            {showCheckbox && (
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={onSelect}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+            )}
+            {onEnlarge && (
+              <button
+                className="text-gray-400 hover:text-gray-700 p-1 rounded"
+                onClick={onEnlarge}
+                aria-label="Enlarge product details"
+              >
+                <Maximize2 className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col flex-1">
+          <div className="font-bold text-lg mb-3 leading-tight line-clamp-2 min-h-[3rem]">{displayTitle}</div>
+          <div className="mb-3 flex flex-wrap gap-2 min-h-[4.5rem]">
+            {category && (
+              <span className="inline-flex items-center bg-green-50 text-green-700 text-xs font-medium rounded-full px-2 py-1">
+                <span className="w-1 h-1 bg-green-500 rounded-full mr-1"></span>
+                {category}
+              </span>
+            )}
+            {isSmartSnack && (
+              <span className="inline-flex items-center bg-blue-50 text-blue-700 text-xs font-medium rounded-full px-2 py-1">
+                <span className="w-1 h-1 bg-blue-500 rounded-full mr-1"></span>
+                Smart Snack
+              </span>
+            )}
+            {isGoodChoice === 'true' && (
+              <span className="inline-flex items-center bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full px-2 py-1">
+                <span className="w-1 h-1 bg-emerald-500 rounded-full mr-1"></span>
+                Good Choice
+              </span>
+            )}
+            {novaLabel && (
+              <span className="inline-flex items-center bg-orange-50 text-orange-700 text-xs font-medium rounded-full px-2 py-1">
+                <span className="w-1 h-1 bg-orange-500 rounded-full mr-1"></span>
+                {novaLabel}
+              </span>
+            )}
+          </div>
+          <div className="text-sm text-gray-600 flex-1 mb-3 line-clamp-2 min-h-[3rem]">{description}</div>
+        </div>
+        <div className="flex gap-2 mt-auto justify-start">
+          <button
+            className={`p-2 transition-colors ${
+              isInWishlist(upc) 
+                ? 'text-red-500' 
+                : 'text-blue-400 hover:text-red-400'
+            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} 
+            onClick={handleWishlistClick}
+            disabled={loading}
+            title={isInWishlist(upc) ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart className={`w-6 h-6 ${isInWishlist(upc) ? 'fill-current' : 'stroke-current'}`} />
+          </button>
+          <button
+            className={`p-2 transition-colors ${
+              isInCart(upc) 
+                ? 'text-green-500' 
+                : 'text-blue-400 hover:text-green-400'
+            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} 
+            onClick={handleCartClick}
+            disabled={loading}
+            title={isInCart(upc) ? 'Remove from cart' : 'Add to cart'}
+          >
+            <ShoppingCart className={`w-6 h-6 ${isInCart(upc) ? 'fill-current' : 'stroke-current'}`} />
+          </button>
+          {onHierarchy && (
+            <button
+              className="p-2 text-blue-400 hover:text-blue-600 transition-colors" 
+              onClick={onHierarchy}
+              title="View Product Hierarchy"
+            >
+              <Network className="w-6 h-6 stroke-current" />
+            </button>
           )}
         </div>
-        <div className="text-sm text-gray-600 flex-1 mb-4">{description}</div>
-      </div>
-      <div className="flex gap-2 mt-auto">
-        <button className="flex-1 flex items-center justify-center gap-1 bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700 transition" onClick={onFavorite}>
-          <Heart className="w-5 h-5" />
-        </button>
-        <button className="flex-1 flex items-center justify-center gap-1 bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700 transition" onClick={onAddToCart}>
-          <ShoppingCart className="w-5 h-5" />
-        </button>
-        {onHierarchy && (
-          <button 
-            className="flex-1 flex items-center justify-center gap-1 bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700 transition" 
-            onClick={onHierarchy}
-            title="View Product Hierarchy"
-          >
-            <Network className="w-5 h-5" />
-          </button>
-        )}
       </div>
     </div>
   );
