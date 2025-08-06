@@ -82,7 +82,7 @@ const GoogleOAuthPage: React.FC = () => {
     };
 
     handleOAuthCallback();
-  }, [searchParams, navigate, login]);
+  }, [searchParams, navigate]);
 
   if (isLoading) {
     return (
