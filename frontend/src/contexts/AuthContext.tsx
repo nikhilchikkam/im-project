@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import TokenRefreshToast from '../components/ui/TokenRefreshToast';
 
@@ -192,14 +192,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setTimeout(() => startAutoRefresh(), 1000);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);
     stopAutoRefresh();
-  };
+  }, []);
 
-  const refreshAccessToken = async (): Promise<boolean> => {
+  // Rate limiting for token refresh
+  const lastRefreshAttemptRef = useRef(0);
+  const REFRESH_COOLDOWN = 5000; // 5 seconds
+
+  const refreshAccessToken = useCallback(async (): Promise<boolean> => {
+    const now = Date.now();
+    
+    // Prevent rapid successive refresh attempts
+    if (now - lastRefreshAttemptRef.current < REFRESH_COOLDOWN) {
+      console.log('Token refresh skipped - too soon since last attempt');
+      return false;
+    }
+    
+    lastRefreshAttemptRef.current = now;
+    
     const refreshToken = localStorage.getItem('refreshToken');
     
     if (!refreshToken) {
@@ -256,7 +270,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       return false;
     }
-  };
+  }, []);
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
@@ -264,7 +278,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const isTokenExpired = (token: string): boolean => {
+  const isTokenExpired = useCallback((token: string): boolean => {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const exp = payload.exp;
@@ -273,7 +287,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (e) {
       return true; // Assume expired if parsing fails
     }
-  };
+  }, []);
 
   // Get token expiration time in milliseconds
   const getTokenExpirationTime = (token: string): number => {

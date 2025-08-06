@@ -83,7 +83,9 @@ const ProductResults: React.FC<ProductResultsProps> = ({
                 onEnlarge={() => setSelectedProduct(p)}
                 onHierarchy={() => handleHierarchyClick(p)}
                 isSelected={selectedItems.includes(p.gtin)}
-                onSelect={() => onItemSelect?.(p.gtin)}
+                onSelect={() => {
+                  onItemSelect && onItemSelect(p.gtin);
+                }}
                 showCheckbox={true}
               />
             );

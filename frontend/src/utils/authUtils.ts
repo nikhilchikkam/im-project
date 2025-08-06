@@ -42,8 +42,22 @@ export const isTokenExpired = (token: string): boolean => {
   }
 };
 
+// Rate limiting for token refresh
+let lastRefreshAttempt = 0;
+const REFRESH_COOLDOWN = 5000; // 5 seconds
+
 // Refresh access token using refresh token
 export const refreshAccessToken = async (): Promise<boolean> => {
+  const now = Date.now();
+  
+  // Prevent rapid successive refresh attempts
+  if (now - lastRefreshAttempt < REFRESH_COOLDOWN) {
+    console.log('Token refresh skipped - too soon since last attempt');
+    return false;
+  }
+  
+  lastRefreshAttempt = now;
+  
   const refreshToken = localStorage.getItem('refreshToken');
   
   if (!refreshToken) {

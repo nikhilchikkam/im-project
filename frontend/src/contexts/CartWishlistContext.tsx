@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useAuth, useAuthenticatedFetch } from './AuthContext';
 
 // Helper function for better error handling
@@ -114,11 +114,12 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [wishlistGroups, setWishlistGroups] = useState<WishlistGroup[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const wishlistCount = wishlistItems.length;
 
-  const refreshCart = async () => {
+  const refreshCart = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -127,13 +128,15 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
       if (response.ok) {
         const data = await response.json();
         setCartItems(data.items || []);
+      } else {
+        console.error('Failed to refresh cart:', response.status);
       }
     } catch (error) {
       console.error('Failed to refresh cart:', error);
     }
-  };
+  }, [user?.id]);
 
-  const refreshWishlist = async () => {
+  const refreshWishlist = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -142,11 +145,13 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
       if (response.ok) {
         const data = await response.json();
         setWishlistItems(data.items || []);
+      } else {
+        console.error('Failed to refresh wishlist:', response.status);
       }
     } catch (error) {
       console.error('Failed to refresh wishlist:', error);
     }
-  };
+  }, [user?.id]);
 
   const addToCart = async (gtin: string, quantity: number = 1) => {
     if (!user) {
@@ -355,7 +360,7 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
   };
 
   // Wishlist Groups functions
-  const fetchWishlistGroups = async () => {
+  const fetchWishlistGroups = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
@@ -375,7 +380,7 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const createWishlistGroup = async (
     name: string, 
@@ -536,16 +541,18 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && !isInitialized) {
       refreshCart();
       refreshWishlist();
       fetchWishlistGroups();
-    } else {
+      setIsInitialized(true);
+    } else if (!user) {
       setCartItems([]);
       setWishlistItems([]);
       setWishlistGroups([]);
+      setIsInitialized(false);
     }
-  }, [user]);
+  }, [user, isInitialized]);
 
   return (
     <CartWishlistContext.Provider value={value}>

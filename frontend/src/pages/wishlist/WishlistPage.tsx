@@ -73,6 +73,8 @@ const WishlistPage = () => {
 
 
 
+
+
   const handleHierarchyClick = (product: any) => {
     setHierarchyModal({
       isOpen: true,
@@ -279,14 +281,14 @@ const WishlistPage = () => {
   const handleViewGroupItems = async (groupId: number) => {
     try {
       // Fetch group details
-      const groupResponse = await fetch(`/api/wishlist-groups/${groupId}`);
+      const groupResponse = await authenticatedFetch(`/api/wishlist-groups/${groupId}`);
       if (!groupResponse.ok) {
         throw new Error('Failed to fetch group details');
       }
       const groupData = await groupResponse.json();
       
       // Fetch group items
-      const itemsResponse = await fetch(`/api/wishlist-groups/${groupId}/items`);
+      const itemsResponse = await authenticatedFetch(`/api/wishlist-groups/${groupId}/items`);
       if (!itemsResponse.ok) {
         throw new Error('Failed to fetch group items');
       }
@@ -495,8 +497,6 @@ const WishlistPage = () => {
                       <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-4">
                           {wishlistItems.map((item) => {
-                            // Debug: Log the item to see what data we're getting
-                            console.log('Wishlist item:', item);
                             
                             // Parse image_urls from JSON string if needed
                             let imageUrls: string[] = [];
@@ -970,15 +970,25 @@ const WishlistPage = () => {
                 <p className="text-gray-500 text-center py-4">No wishlist groups available. Create a group first.</p>
               ) : (
                 wishlistGroups.map((group) => (
-                  <label key={group.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="group"
-                      value={group.id}
-                      checked={moveToGroupModal.selectedGroupId === group.id}
-                      onChange={(e) => setMoveToGroupModal(prev => ({ ...prev, selectedGroupId: parseInt(e.target.value) }))}
-                      className="w-4 h-4 text-blue-600"
-                    />
+                  <label 
+                    key={group.id} 
+                    className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => {
+                      setMoveToGroupModal(prev => ({ ...prev, selectedGroupId: group.id }));
+                    }}
+                  >
+                                          <input
+                        type="radio"
+                        name="group"
+                        value={group.id}
+                        checked={moveToGroupModal.selectedGroupId === group.id}
+                        onChange={(e) => {
+                          const newGroupId = parseInt(e.target.value);
+                          setMoveToGroupModal(prev => ({ ...prev, selectedGroupId: newGroupId }));
+                        }}
+                        className="w-4 h-4 text-blue-600 cursor-pointer"
+                        style={{ backgroundColor: 'red' }}
+                      />
                     <div className="flex-1">
                       <div className="font-medium text-gray-900">{group.name}</div>
                       {group.description && (

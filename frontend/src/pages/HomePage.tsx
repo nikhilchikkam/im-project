@@ -73,6 +73,11 @@ const HomePage = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
 
+  // Debug selectedItems state changes
+  useEffect(() => {
+    console.log('HomePage selectedItems state changed:', selectedItems);
+  }, [selectedItems]);
+
 
 
   const apiUrl = import.meta.env.VITE_API_URL || '';
@@ -193,11 +198,12 @@ const HomePage = () => {
 
   // Selection handlers
   const handleItemSelect = (gtin: string) => {
-    setSelectedItems(prev => 
-      prev.includes(gtin) 
+    setSelectedItems(prev => {
+      const newSelection = prev.includes(gtin) 
         ? prev.filter(item => item !== gtin)
-        : [...prev, gtin]
-    );
+        : [...prev, gtin];
+      return newSelection;
+    });
   };
 
   const handleSelectAll = () => {
@@ -205,7 +211,8 @@ const HomePage = () => {
       setSelectedItems([]);
       setSelectAll(false);
     } else {
-      setSelectedItems(products.map(p => p.gtin));
+      const allGtins = products.map(p => p.gtin);
+      setSelectedItems(allGtins);
       setSelectAll(true);
     }
   };

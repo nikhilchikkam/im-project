@@ -356,10 +356,23 @@ async def add_to_wishlist(
     try:
         if hasattr(db, 'execute'):
             # SQLAlchemy session
+            # First check if item already exists in main wishlist (group_id IS NULL)
+            check_query = text("""
+                SELECT id FROM wishlist_items 
+                WHERE user_id = :user_id AND gtin = :gtin AND group_id IS NULL
+            """)
+            existing = db.execute(check_query, {
+                "user_id": current_user.id,
+                "gtin": request.gtin
+            }).fetchone()
+            
+            if existing:
+                return {"message": "Product already in wishlist"}
+            
+            # Add to main wishlist (group_id IS NULL)
             query = text("""
-                INSERT INTO wishlist_items (user_id, gtin)
-                VALUES (:user_id, :gtin)
-                ON CONFLICT (user_id, gtin) DO NOTHING
+                INSERT INTO wishlist_items (user_id, gtin, group_id)
+                VALUES (:user_id, :gtin, NULL)
                 RETURNING *
             """)
             result = db.execute(query, {
@@ -370,10 +383,22 @@ async def add_to_wishlist(
         else:
             # psycopg2 connection
             cur = db.cursor()
+            
+            # First check if item already exists in main wishlist (group_id IS NULL)
             cur.execute("""
-                INSERT INTO wishlist_items (user_id, gtin)
-                VALUES (%s, %s)
-                ON CONFLICT (user_id, gtin) DO NOTHING
+                SELECT id FROM wishlist_items 
+                WHERE user_id = %s AND gtin = %s AND group_id IS NULL
+            """, (current_user.id, request.gtin))
+            existing = cur.fetchone()
+            
+            if existing:
+                cur.close()
+                return {"message": "Product already in wishlist"}
+            
+            # Add to main wishlist (group_id IS NULL)
+            cur.execute("""
+                INSERT INTO wishlist_items (user_id, gtin, group_id)
+                VALUES (%s, %s, NULL)
                 RETURNING *
             """, (current_user.id, request.gtin))
             result = cur.fetchone()
@@ -522,6 +547,11 @@ async def get_product_status(
         raise HTTPException(status_code=500, detail=f"Failed to get product status: {str(e)}")
 
 # Wishlist Groups Endpoints
+@router.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "message": "Wishlist API is running"}
+
 @router.get("/wishlist-groups")
 async def get_wishlist_groups(
     current_user: User = Depends(get_current_user),
@@ -1304,6 +1334,7 @@ async def get_wishlist_group(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Error fetching wishlist group {group_id} for user {current_user.id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch wishlist group: {str(e)}")
 
 @router.get("/wishlist-groups/{group_id}/items")

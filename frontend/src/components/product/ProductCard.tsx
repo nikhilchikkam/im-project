@@ -1,5 +1,5 @@
 import { Heart, ShoppingCart, Maximize2, Network, ChevronLeft, ChevronRight } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCartWishlist } from '../../contexts/CartWishlistContext';
 
 interface ProductCardProps {
@@ -57,6 +57,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
     removeFromWishlist,
     loading 
   } = useCartWishlist();
+
+
   const displayTitle = normalized_name?.trim()
     ? normalized_name
     : (name?.trim() ? name : (title?.trim() ? title : 'N/A'));
@@ -232,13 +234,33 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <span className="text-xs text-gray-500">UPC/GTIN: {upc}</span>
           <div className="flex items-center gap-2">
             {showCheckbox && (
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={onSelect}
-                onClick={(e) => e.stopPropagation()}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-              />
+                              <div 
+                  className="flex items-center gap-1 bg-yellow-100 p-1 rounded cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelect) {
+                      onSelect();
+                    }
+                  }}
+                >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => {
+                    console.log('ProductCard checkbox onChange triggered for gtin:', upc, 'isSelected:', isSelected, 'checked:', e.target.checked);
+                    e.stopPropagation();
+                    if (onSelect) {
+                      console.log('Calling onSelect for gtin:', upc);
+                      onSelect();
+                    } else {
+                      console.log('onSelect is not defined for gtin:', upc);
+                    }
+                  }}
+                  className="w-6 h-6 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                  style={{ minWidth: '24px', minHeight: '24px' }}
+                />
+                
+              </div>
             )}
             {onEnlarge && (
               <button

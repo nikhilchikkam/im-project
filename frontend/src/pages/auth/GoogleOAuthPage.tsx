@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Toast } from '../../components/ui/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const GoogleOAuthPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -43,9 +45,8 @@ const GoogleOAuthPage: React.FC = () => {
         const data = await response.json();
 
         if (response.ok) {
-          // Store tokens
-          localStorage.setItem('accessToken', data.access_token);
-          localStorage.setItem('refreshToken', data.refresh_token);
+          // Call the login function to update AuthContext and trigger data fetching
+          login(data.access_token, data.refresh_token, data.user);
           
           // Show success message
           if (data.user_existed) {
@@ -55,7 +56,9 @@ const GoogleOAuthPage: React.FC = () => {
           }
           
           // Redirect to products page after successful login
-          navigate('/products');
+          setTimeout(() => {
+            navigate('/products');
+          }, 1500); // Small delay to ensure context updates are processed
         } else {
           setError(data.detail || 'Authentication failed');
         }
