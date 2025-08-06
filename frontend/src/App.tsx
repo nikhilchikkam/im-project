@@ -39,7 +39,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/auth/verify" element={<MagicLinkVerificationPage />} />
-        <Route path="/login/google" element={<GoogleOAuthPage />} />
+        <Route path="/auth/google" element={<GoogleOAuthPage />} />
         <Route path="/login/apple" element={<AppleOAuthPage />} />
         <Route path="/login/apple/callback" element={<AppleOAuthPage />} />
 
