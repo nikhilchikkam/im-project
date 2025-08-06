@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
+import googleIcon from '../../assets/google-icon.png';
 
 export const SignupForm = () => {
   // Form state
@@ -18,6 +19,23 @@ export const SignupForm = () => {
   const [step, setStep] = useState<'individual' | 'company'>('company');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'verify' | 'code' | 'error'>('idle');
   const [globalError, setGlobalError] = useState('');
+
+  // Google signup handler
+  const handleGoogleSignup = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/auth/google/url`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        window.location.href = data.url;
+      } else {
+        setGlobalError('Failed to get Google OAuth URL');
+      }
+    } catch (err) {
+      setGlobalError('Network error. Please try again.');
+    }
+  };
 
   // Helper for field change
   const handleChange = (field: string, value: string) => {
@@ -234,18 +252,26 @@ export const SignupForm = () => {
         <span className="text-sm text-gray-500">or</span>
         <div className="flex-grow border-t border-gray-300" />
       </div>
-      <div className="space-y-2">
-        <button type="button" className="w-full border border-gray-300 rounded-full py-2 flex items-center justify-center gap-2 hover:bg-gray-50">
-          <img src="google-icon.png" alt="Google" className="w-5 h-5" />
+      {/* SSO Buttons */}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={handleGoogleSignup}
+          className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-md py-2 px-4 text-gray-700 hover:bg-gray-50 transition"
+        >
+          <img src={googleIcon} alt="Google" className="w-5 h-5" />
           <span>Continue with Google</span>
         </button>
-        <button type="button" className="w-full border border-gray-300 rounded-full py-2 hover:bg-gray-50">
-          Continue with Single Sign On
-        </button>
-        <button type="button" className="w-full border border-gray-300 rounded-full py-2 flex items-center justify-center gap-2 hover:bg-gray-50">
-          <img src="apple-icon.png" alt="Apple" className="w-5 h-5" />
+        {/*
+        <button
+          type="button"
+          onClick={handleAppleSignup}
+          className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-md py-2 px-4 text-gray-700 hover:bg-gray-50 transition"
+        >
+          <img src={appleIcon} alt="Apple" className="w-5 h-5" />
           <span>Continue with Apple</span>
         </button>
+        */}
       </div>
       <div className="text-center text-sm mt-4">
         Already have an account?{' '}

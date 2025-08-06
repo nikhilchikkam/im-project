@@ -19,6 +19,7 @@ interface ProductCardProps {
   onAddToCart?: () => void;
   onEnlarge?: () => void;
   onHierarchy?: () => void;
+  onRemove?: () => void; // Custom remove handler
   isSelected?: boolean;
   onSelect?: () => void;
   showCheckbox?: boolean;
@@ -41,6 +42,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onFavorite,
   onHierarchy,
+  onRemove,
   isSelected = false,
   onSelect,
   showCheckbox = false,
@@ -148,14 +150,32 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleWishlistClick = async () => {
     if (isInWishlist(upc)) {
-      await removeFromWishlist(upc);
+      if (onRemove) {
+        onRemove();
+      } else {
+        await removeFromWishlist(upc);
+      }
     } else {
       await addToWishlist(upc);
     }
   };
 
+  // Handle card click to open modal
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger if clicking on action buttons or checkbox
+    const target = e.target as HTMLElement;
+    const isActionButton = target.closest('button') || target.closest('input[type="checkbox"]');
+    
+    if (!isActionButton && onEnlarge) {
+      onEnlarge();
+    }
+  };
+
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200 min-h-[320px] flex flex-col ${className || ''}`}>
+    <div 
+      className={`bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 min-h-[320px] flex flex-col cursor-pointer ${className || ''}`}
+      onClick={handleCardClick}
+    >
       
       {/* Image Section */}
       <div className="relative h-56 bg-gray-100 overflow-hidden flex-shrink-0 group">
@@ -176,13 +196,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <>
                 <button
                   className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75 transition-opacity z-10 opacity-0 group-hover:opacity-100"
-                  onClick={prevImage}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    prevImage();
+                  }}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75 transition-opacity z-10 opacity-0 group-hover:opacity-100"
-                  onClick={nextImage}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nextImage();
+                  }}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -210,13 +236,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 type="checkbox"
                 checked={isSelected}
                 onChange={onSelect}
+                onClick={(e) => e.stopPropagation()}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
             )}
             {onEnlarge && (
               <button
                 className="text-gray-400 hover:text-gray-700 p-1 rounded"
-                onClick={onEnlarge}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEnlarge();
+                }}
                 aria-label="Enlarge product details"
               >
                 <Maximize2 className="w-5 h-5" />
@@ -261,7 +291,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 ? 'text-red-500' 
                 : 'text-blue-400 hover:text-red-400'
             } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} 
-            onClick={handleWishlistClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleWishlistClick();
+            }}
             disabled={loading}
             title={isInWishlist(upc) ? 'Remove from wishlist' : 'Add to wishlist'}
           >
@@ -273,7 +306,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 ? 'text-green-500' 
                 : 'text-blue-400 hover:text-green-400'
             } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} 
-            onClick={handleCartClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCartClick();
+            }}
             disabled={loading}
             title={isInCart(upc) ? 'Remove from cart' : 'Add to cart'}
           >
@@ -282,7 +318,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {onHierarchy && (
             <button
               className="p-2 text-blue-400 hover:text-blue-600 transition-colors" 
-              onClick={onHierarchy}
+              onClick={(e) => {
+                e.stopPropagation();
+                onHierarchy();
+              }}
               title="View Product Hierarchy"
             >
               <Network className="w-6 h-6 stroke-current" />

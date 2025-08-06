@@ -163,7 +163,20 @@ async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
         
         return {
             "access_token": new_access_token,
-            "token_type": "bearer"
+            "token_type": "bearer",
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "first_name": user.get("first_name"),
+                "last_name": user.get("last_name"),
+                "company_name": user.get("company_name"),
+                "phone": user.get("phone"),
+                "business_id": user.get("business_id"),
+                "auth_provider": user.get("auth_provider", "email"),
+                "is_verified": user.get("is_verified", False),
+                "created_at": user["created_at"].isoformat() if user["created_at"] else None,
+                "updated_at": user["updated_at"].isoformat() if user["updated_at"] else None,
+            }
         }
     except HTTPException:
         raise
@@ -173,7 +186,26 @@ async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
 @router.get("/google/url")
 async def get_google_oauth_url():
     """Get Google OAuth URL"""
-    return {"url": get_google_oauth_url()}
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured. Please set GOOGLE_CLIENT_ID environment variable.")
+    
+    redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
+    if not redirect_uri:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured. Please set GOOGLE_REDIRECT_URI environment variable.")
+    
+    # Debug: Print the values to see what's happening
+    print(f"DEBUG - GOOGLE_CLIENT_ID: {GOOGLE_CLIENT_ID}")
+    print(f"DEBUG - GOOGLE_REDIRECT_URI: {redirect_uri}")
+    
+    # Generate a random state parameter for security
+    import secrets
+    state = secrets.token_urlsafe(32)
+    
+    url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={GOOGLE_CLIENT_ID}&response_type=code&scope=email%20profile&redirect_uri={redirect_uri}&state={state}"
+    
+    print(f"DEBUG - Generated URL: {url}")
+    return {"url": url}
 
 @router.post("/google/callback")
 async def google_oauth_callback(request: OAuthCallback, db: Session = Depends(get_db)):
@@ -211,6 +243,8 @@ async def google_oauth_callback(request: OAuthCallback, db: Session = Depends(ge
             
             # Get or create user
             user = get_user_by_email(db, user_info["email"])
+            user_existed = False
+            
             if not user:
                 user_data = {
                     "email": user_info["email"],
@@ -221,6 +255,7 @@ async def google_oauth_callback(request: OAuthCallback, db: Session = Depends(ge
                 }
                 user = create_user(db, user_data)
             else:
+                user_existed = True
                 # Update existing user if needed
                 if not user["is_verified"]:
                     update_user_verification(db, user_info["email"], True)
@@ -240,7 +275,9 @@ async def google_oauth_callback(request: OAuthCallback, db: Session = Depends(ge
                     "last_name": user["last_name"],
                     "company_name": user["company_name"],
                     "is_verified": user["is_verified"]
-                }
+                },
+                "user_existed": user_existed,
+                "message": "Welcome back!" if user_existed else "Account created successfully!"
             }
     except HTTPException:
         raise
@@ -256,12 +293,98 @@ async def get_apple_oauth_url():
 async def apple_oauth_callback(request: OAuthCallback, db: Session = Depends(get_db)):
     """Handle Apple OAuth callback"""
     try:
-        # Apple OAuth implementation would go here
-        # This is a simplified version - Apple OAuth requires additional setup
-        # including JWT token generation and validation
-        
-        raise HTTPException(status_code=501, detail="Apple OAuth not yet implemented")
-        
+        # Exchange code for tokens
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                "https://appleid.apple.com/auth/token",
+                data={
+                    "client_id": os.getenv("APPLE_CLIENT_ID"),
+                    "client_secret": os.getenv("APPLE_CLIENT_SECRET"),  # This should be a JWT
+                    "code": request.code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": os.getenv("APPLE_REDIRECT_URI")
+                }
+            )
+            
+            if token_response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Failed to exchange code for tokens")
+            
+            tokens = token_response.json()
+            id_token = tokens.get("id_token")
+            
+            if not id_token:
+                raise HTTPException(status_code=400, detail="No ID token received from Apple")
+            
+            # Decode and verify the ID token
+            # In production, you should verify the JWT signature
+            import jwt
+            try:
+                # Note: In production, you should verify the JWT signature with Apple's public keys
+                # For now, we'll decode without verification (not recommended for production)
+                payload = jwt.decode(id_token, options={"verify_signature": False})
+            except jwt.InvalidTokenError:
+                raise HTTPException(status_code=400, detail="Invalid ID token")
+            
+            # Extract user information
+            email = payload.get("email")
+            if not email:
+                raise HTTPException(status_code=400, detail="No email in Apple ID token")
+            
+            # Apple doesn't always provide name in the token
+            # You might need to handle this differently
+            first_name = payload.get("name", {}).get("firstName") if payload.get("name") else None
+            last_name = payload.get("name", {}).get("lastName") if payload.get("name") else None
+            
+            # Get or create user
+            user = get_user_by_email(db, email)
+            if not user:
+                user_data = {
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "auth_provider": "apple",
+                    "is_verified": True
+                }
+                user = create_user(db, user_data)
+            else:
+                # Update existing user if needed
+                if not user["is_verified"]:
+                    update_user_verification(db, email, True)
+                
+                # Update name if provided and user doesn't have it
+                if first_name and not user["first_name"]:
+                    if hasattr(db, 'execute'):  # SQLAlchemy Session
+                        db.execute(
+                            text("UPDATE users SET first_name = :first_name WHERE id = :user_id"),
+                            {"first_name": first_name, "user_id": user["id"]}
+                        )
+                        db.commit()
+                    else:  # psycopg2 connection
+                        cursor = db.cursor()
+                        cursor.execute(
+                            "UPDATE users SET first_name = %s WHERE id = %s",
+                            (first_name, user["id"])
+                        )
+                        db.commit()
+                        cursor.close()
+            
+            # Create JWT tokens
+            access_token = create_access_token(data={"sub": str(user["id"])})
+            refresh_token = create_refresh_token(data={"sub": str(user["id"])})
+            
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer",
+                "user": {
+                    "id": user["id"],
+                    "email": user["email"],
+                    "first_name": user["first_name"],
+                    "last_name": user["last_name"],
+                    "company_name": user["company_name"],
+                    "is_verified": user["is_verified"]
+                }
+            }
     except HTTPException:
         raise
     except Exception as e:

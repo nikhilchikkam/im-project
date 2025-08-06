@@ -8,6 +8,10 @@ import ProductSearchBar from '../components/home/ProductSearchBar';
 import ProductFilterBar from '../components/home/ProductFilterBar';
 import ProductResults from '../components/home/ProductResults';
 import { useCartWishlist } from '../contexts/CartWishlistContext';
+import { useAuth, useAuthenticatedFetch } from '../contexts/AuthContext';
+import { FolderPlus } from 'lucide-react';
+
+
 
 const categories = [
   'All Categories',
@@ -49,8 +53,9 @@ const DEFAULT_LIMIT = 12;
 
 const HomePage = () => {
   const { addToWishlist, addToCart } = useCartWishlist();
+  const { authenticatedFetch } = useAuthenticatedFetch();
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(categories.slice());
   const [viewType, setViewType] = useState<'card' | 'list'>('card');
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [searchInput, setSearchInput] = useState('');
@@ -67,6 +72,8 @@ const HomePage = () => {
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+
+
 
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
@@ -236,6 +243,8 @@ const HomePage = () => {
     }
   };
 
+
+
   // Calculate totalPages
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -359,6 +368,7 @@ const HomePage = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
                     </svg>
                   </button>
+
                 </div>
               </div>
             </div>
@@ -405,6 +415,8 @@ const HomePage = () => {
         handleGuidelineToggle={handleGuidelineToggle}
         handleCategoryChange={handleCategoryChange}
       />
+
+
     </div>
   );
 };

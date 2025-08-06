@@ -1,43 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Toast } from '../../components/ui/Toast';
 
-const GoogleOAuthPage: React.FC = () => {
+const AppleOAuthPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
         const code = searchParams.get('code');
         const error = searchParams.get('error');
-        const state = searchParams.get('state');
-
-        console.log('OAuth callback params:', { code, error, state });
 
         if (error) {
-          setError(`OAuth authentication failed: ${error}`);
+          setError('OAuth authentication failed');
           setIsLoading(false);
           return;
         }
 
         if (!code) {
-          setError('No authorization code received from Google');
+          setError('No authorization code received');
           setIsLoading(false);
           return;
         }
 
         // Send the code to our backend
         const apiUrl = import.meta.env.VITE_API_URL || '';
-        const response = await fetch(`${apiUrl}/api/auth/google/callback`, {
+        const response = await fetch(`${apiUrl}/api/auth/apple/callback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ code, state }),
+          body: JSON.stringify({ code }),
         });
 
         const data = await response.json();
@@ -47,20 +42,12 @@ const GoogleOAuthPage: React.FC = () => {
           localStorage.setItem('accessToken', data.access_token);
           localStorage.setItem('refreshToken', data.refresh_token);
           
-          // Show success message
-          if (data.user_existed) {
-            setToast({ message: 'Welcome back! Your existing account has been linked to Google.', type: 'success' });
-          } else {
-            setToast({ message: 'Account created successfully with Google!', type: 'success' });
-          }
-          
           // Redirect to products page after successful login
           navigate('/products');
         } else {
           setError(data.detail || 'Authentication failed');
         }
       } catch (err) {
-        console.error('OAuth callback error:', err);
         setError('Network error. Please try again.');
       } finally {
         setIsLoading(false);
@@ -75,7 +62,7 @@ const GoogleOAuthPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Completing Google sign-in...</p>
+          <p className="text-gray-600">Completing Apple sign-in...</p>
         </div>
       </div>
     );
@@ -105,17 +92,7 @@ const GoogleOAuthPage: React.FC = () => {
     );
   }
 
-  return (
-    <>
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-    </>
-  );
+  return null;
 };
 
-export default GoogleOAuthPage; 
+export default AppleOAuthPage; 

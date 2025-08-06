@@ -1,89 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCartWishlist } from '../../contexts/CartWishlistContext';
+import { useNavigate } from 'react-router-dom';
 import LoginPrompt from '../../components/common/LoginPrompt';
-import WishlistGroupCard from '../../features/wishlist/WishlistGroupCard';
-import CreateWishlistGroupModal from '../../features/wishlist/CreateWishlistGroupModal';
-import { Button } from '../../components/ui/Button';
-
-interface WishlistGroup {
-  id: number;
-  name: string;
-  description: string | null;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
-  member_count: number;
-  item_count: number;
-  is_owner: boolean;
-}
 
 const WishlistGroupsPage: React.FC = () => {
-  const { user } = useAuth();
-  const [wishlistGroups, setWishlistGroups] = useState<WishlistGroup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
+  const { 
+    wishlistGroups, 
+    loading, 
+    createWishlistGroup, 
+    deleteWishlistGroup
+  } = useCartWishlist();
+  const navigate = useNavigate();
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDescription, setNewGroupDescription] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || '';
-
-  const fetchWishlistGroups = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const response = await fetch(`${apiUrl}/api/wishlist-groups/`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setWishlistGroups(data.groups || []);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to fetch wishlist groups');
-      }
-    } catch (error) {
-      console.error('Failed to fetch wishlist groups:', error);
-      setError('Failed to fetch wishlist groups');
-    } finally {
-      setLoading(false);
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) {
+      return;
     }
-  };
 
-  useEffect(() => {
-    if (user) {
-      fetchWishlistGroups();
-    }
-  }, [user]);
+    const success = await createWishlistGroup(
+      newGroupName.trim(),
+      newGroupDescription.trim() || undefined
+    );
 
-  const handleCreateGroup = async (name: string, description: string, isPublic: boolean) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/wishlist-groups/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          is_public: isPublic,
-        }),
-      });
-
-      if (response.ok) {
-        await fetchWishlistGroups();
-        setShowCreateModal(false);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to create wishlist group');
-      }
-    } catch (error) {
-      console.error('Failed to create wishlist group:', error);
-      setError('Failed to create wishlist group');
+    if (success) {
+      setShowCreateModal(false);
+      setNewGroupName('');
+      setNewGroupDescription('');
     }
   };
 
@@ -92,158 +40,195 @@ const WishlistGroupsPage: React.FC = () => {
       return;
     }
 
-    try {
-      const response = await fetch(`${apiUrl}/api/wishlist-groups/${groupId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-
-      if (response.ok) {
-        await fetchWishlistGroups();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to delete wishlist group');
-      }
-    } catch (error) {
-      console.error('Failed to delete wishlist group:', error);
-      setError('Failed to delete wishlist group');
-    }
+    await deleteWishlistGroup(groupId);
   };
 
-  if (!user) {
+  const handleViewGroupItems = (groupId: number) => {
+    navigate(`/wishlist-groups/${groupId}`);
+  };
+
+  // Show loading while auth is initializing
+  if (authLoading) {
     return (
-      <LoginPrompt
-        title="Access Your Wishlists"
-        description="Sign in to view and manage your wishlist groups"
-        icon={
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-        }
-        primaryColor="bg-blue-600"
-        primaryColorHover="hover:bg-blue-700"
-        linkColor="text-blue-600"
-        linkColorHover="hover:text-blue-700"
-      />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
-  if (loading) {
+  // Show login prompt if not authenticated
+  if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        </div>
-      </div>
+      <LoginPrompt
+        title="Sign in to view wishlist groups"
+        description="Create and manage your wishlist groups to organize your favorite products"
+        icon="📋"
+        primaryColor="blue"
+        primaryColorHover="blue"
+        linkColor="blue"
+        linkColorHover="blue"
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Hi, {user.first_name || user.email}</h1>
-            <p className="text-gray-600 mt-1">Your wishlists</p>
-          </div>
-          <div className="flex space-x-4">
-            <Button
-              onClick={() => window.location.href = '/products'}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span>Find Products</span>
-            </Button>
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center space-x-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Add</span>
-            </Button>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Wishlist Groups</h1>
+          <p className="mt-2 text-gray-600">Organize your favorite products into groups</p>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-              <div className="ml-auto pl-3">
-                <button
-                  onClick={() => setError(null)}
-                  className="inline-flex text-red-400 hover:text-red-600"
-                >
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+
+
+        {/* Create Group Button */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Create New Group
+          </button>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         )}
 
-        {/* Wishlist Groups Grid */}
-        {wishlistGroups.length === 0 ? (
+        {/* Groups Grid */}
+        {!loading && wishlistGroups.length === 0 ? (
           <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No wishlists</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating your first wishlist.</p>
-            <div className="mt-6">
-              <Button onClick={() => setShowCreateModal(true)}>
-                Create Wishlist
-              </Button>
+            <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
             </div>
+            <h2 className="text-2xl font-semibold mb-2">No wishlist groups yet</h2>
+            <p className="text-gray-600 mb-6">Create your first wishlist group to get started.</p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Create Your First Group
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {wishlistGroups.map((group) => (
-              <WishlistGroupCard
-                key={group.id}
-                group={group}
-                onDelete={handleDeleteGroup}
-              />
+              <div key={group.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewGroupItems(group.id)}>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{group.name}</h3>
+                    {group.description && (
+                      <p className="text-sm text-gray-600 mb-2">{group.description}</p>
+                    )}
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span>{group.item_count} items</span>
+                      <span>{group.member_count} members</span>
+                      {group.is_public && (
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                          Public
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {group.is_owner && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteGroup(group.id);
+                      }}
+                      className="text-red-600 hover:text-red-800 p-1"
+                      title="Delete group"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-400">
+                    Created {new Date(group.created_at).toLocaleDateString()}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewGroupItems(group.id);
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center space-x-1"
+                  >
+                    <span>View Items</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         )}
-
-        {/* Floating Add Button */}
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
-
-        {/* Create Wishlist Group Modal */}
-        {showCreateModal && (
-          <CreateWishlistGroupModal
-            onClose={() => setShowCreateModal(false)}
-            onCreate={handleCreateGroup}
-          />
-        )}
       </div>
+
+      {/* Create Group Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Create New Wishlist Group</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Group Name *
+                </label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter group name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={newGroupDescription}
+                  onChange={(e) => setNewGroupDescription(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter description (optional)"
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewGroupName('');
+                  setNewGroupDescription('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateGroup}
+                disabled={loading || !newGroupName.trim()}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating...' : 'Create Group'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

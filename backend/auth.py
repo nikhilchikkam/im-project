@@ -257,7 +257,14 @@ async def get_current_user_optional(credentials: Optional[HTTPAuthorizationCrede
         return None
 
 def get_google_oauth_url():
-    return f"https://accounts.google.com/oauth/authorize?client_id={GOOGLE_CLIENT_ID}&response_type=code&scope=email profile&redirect_uri={os.getenv('GOOGLE_REDIRECT_URI')}"
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured. Please set GOOGLE_CLIENT_ID environment variable.")
+    
+    redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
+    if not redirect_uri:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured. Please set GOOGLE_REDIRECT_URI environment variable.")
+    
+    return f"https://accounts.google.com/o/oauth2/v2/auth?client_id={GOOGLE_CLIENT_ID}&response_type=code&scope=email profile&redirect_uri={redirect_uri}"
 
 def get_apple_oauth_url():
     return f"https://appleid.apple.com/auth/authorize?client_id={APPLE_CLIENT_ID}&response_type=code&scope=email name&redirect_uri={os.getenv('APPLE_REDIRECT_URI')}"

@@ -51,10 +51,8 @@ export const VerifyPage = () => {
             localStorage.setItem('refresh_token', data.refresh_token);
           }
           
-          // Redirect to home page after a short delay
-          setTimeout(() => {
-            navigate('/');
-          }, 2000);
+          // Redirect to products page after successful verification
+          navigate('/products');
         } else {
           setStatus('error');
           setMessage(data.detail || 'Verification failed. Please try again.');

@@ -38,6 +38,8 @@ interface WishlistItem {
   id: number;
   gtin: string;
   added_at: string;
+  group_id?: number | null;
+  groups?: { id: number; name: string }[];
   product: {
     name: string;
     normalized_name?: string;
@@ -51,9 +53,23 @@ interface WishlistItem {
   };
 }
 
+interface WishlistGroup {
+  id: number;
+  name: string;
+  description: string | null;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+  member_count: number;
+  item_count: number;
+  is_owner: boolean;
+  user_role: string;
+}
+
 interface CartWishlistContextType {
   cartItems: CartItem[];
   wishlistItems: WishlistItem[];
+  wishlistGroups: WishlistGroup[];
   cartCount: number;
   wishlistCount: number;
   loading: boolean;
@@ -62,13 +78,19 @@ interface CartWishlistContextType {
   updateCartQuantity: (gtin: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
   addToWishlist: (gtin: string) => Promise<void>;
-  removeFromWishlist: (gtin: string) => Promise<void>;
+  removeFromWishlist: (gtin: string) => Promise<any>;
   clearWishlist: () => Promise<void>;
   isInCart: (gtin: string) => boolean;
   isInWishlist: (gtin: string) => boolean;
   getCartQuantity: (gtin: string) => number;
   refreshCart: () => Promise<void>;
   refreshWishlist: () => Promise<void>;
+  // Wishlist Groups functions
+  fetchWishlistGroups: () => Promise<void>;
+  createWishlistGroup: (name: string, description?: string, isPublic?: boolean) => Promise<WishlistGroup | null>;
+  updateWishlistGroup: (groupId: number, name?: string, description?: string, isPublic?: boolean) => Promise<boolean>;
+  deleteWishlistGroup: (groupId: number) => Promise<boolean>;
+  addItemsToGroup: (groupId: number, gtins: string[]) => Promise<boolean>;
 }
 
 const CartWishlistContext = createContext<CartWishlistContextType | undefined>(undefined);
@@ -90,6 +112,7 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
   const { authenticatedFetch } = useAuthenticatedFetch();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [wishlistGroups, setWishlistGroups] = useState<WishlistGroup[]>([]);
   const [loading, setLoading] = useState(false);
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
@@ -263,7 +286,7 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
   };
 
   const removeFromWishlist = async (gtin: string) => {
-    if (!user) return;
+    if (!user) return null;
 
     setLoading(true);
     try {
@@ -276,14 +299,20 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
       });
 
       if (response.ok) {
+        const data = await response.json();
         await refreshWishlist();
+        
+        // Return the response data for the caller to handle
+        return data;
       } else {
         const errorMessage = await handleApiError(response, 'Failed to remove from wishlist');
         alert(errorMessage);
+        return null;
       }
     } catch (error) {
       console.error('Failed to remove from wishlist:', error);
       alert('Failed to remove from wishlist');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -325,9 +354,164 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
     return item ? item.quantity : 0;
   };
 
+  // Wishlist Groups functions
+  const fetchWishlistGroups = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const response = await authenticatedFetch('/api/wishlist-groups');
+
+      if (response.ok) {
+        const data = await response.json();
+        setWishlistGroups(data);
+      } else {
+        const errorMessage = await handleApiError(response, 'Failed to fetch wishlist groups');
+        alert(errorMessage);
+      }
+    } catch (error) {
+      console.error('Failed to fetch wishlist groups:', error);
+      alert('Failed to fetch wishlist groups');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createWishlistGroup = async (
+    name: string, 
+    description?: string, 
+    isPublic: boolean = false
+  ): Promise<WishlistGroup | null> => {
+    if (!user) return null;
+
+    setLoading(true);
+    try {
+      const response = await authenticatedFetch('/api/wishlist-groups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description?.trim() || null,
+          is_public: isPublic
+        })
+      });
+
+      if (response.ok) {
+        const newGroup = await response.json();
+        setWishlistGroups(prev => [newGroup, ...prev]);
+        return newGroup;
+      } else {
+        const errorMessage = await handleApiError(response, 'Failed to create wishlist group');
+        alert(errorMessage);
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to create wishlist group:', error);
+      alert('Failed to create wishlist group');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateWishlistGroup = async (groupId: number, name?: string, description?: string, isPublic?: boolean): Promise<boolean> => {
+    if (!user) return false;
+
+    setLoading(true);
+    try {
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (isPublic !== undefined) updateData.is_public = isPublic;
+
+      const response = await authenticatedFetch(`/api/wishlist-groups/${groupId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        await fetchWishlistGroups();
+        return true;
+      } else {
+        const errorMessage = await handleApiError(response, 'Failed to update wishlist group');
+        alert(errorMessage);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to update wishlist group:', error);
+      alert('Failed to update wishlist group');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteWishlistGroup = async (groupId: number): Promise<boolean> => {
+    if (!user) return false;
+
+    setLoading(true);
+    try {
+      const response = await authenticatedFetch(`/api/wishlist-groups/${groupId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setWishlistGroups(prev => prev.filter(group => group.id !== groupId));
+        return true;
+      } else {
+        const errorMessage = await handleApiError(response, 'Failed to delete wishlist group');
+        alert(errorMessage);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to delete wishlist group:', error);
+      alert('Failed to delete wishlist group');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addItemsToGroup = async (groupId: number, gtins: string[]): Promise<boolean> => {
+    if (!user) return false;
+
+    setLoading(true);
+    try {
+      const response = await authenticatedFetch(`/api/wishlist-groups/${groupId}/add-items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ gtins })
+      });
+
+      if (response.ok) {
+        // Refresh the groups to update item counts
+        await fetchWishlistGroups();
+        return true;
+      } else {
+        const errorMessage = await handleApiError(response, 'Failed to add items to group');
+        alert(errorMessage);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to add items to group:', error);
+      alert('Failed to add items to group');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: CartWishlistContextType = {
     cartItems,
     wishlistItems,
+    wishlistGroups,
     cartCount,
     wishlistCount,
     loading,
@@ -343,15 +527,23 @@ export const CartWishlistProvider: React.FC<CartWishlistProviderProps> = ({ chil
     getCartQuantity,
     refreshCart,
     refreshWishlist,
+    // Wishlist Groups functions
+    fetchWishlistGroups,
+    createWishlistGroup,
+    updateWishlistGroup,
+    deleteWishlistGroup,
+    addItemsToGroup,
   };
 
   useEffect(() => {
     if (user) {
       refreshCart();
       refreshWishlist();
+      fetchWishlistGroups();
     } else {
       setCartItems([]);
       setWishlistItems([]);
+      setWishlistGroups([]);
     }
   }, [user]);
 
