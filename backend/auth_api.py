@@ -207,8 +207,8 @@ async def get_google_oauth_url():
     print(f"DEBUG - Generated URL: {url}")
     return {"url": url}
 
-@router.post("/google/callback")
-async def google_oauth_callback(request: OAuthCallback, db: Session = Depends(get_db)):
+@router.get("/google/callback")
+async def google_oauth_callback(code: str, state: str = None, db: Session = Depends(get_db)):
     """Handle Google OAuth callback"""
     try:
         # Exchange code for tokens
@@ -218,7 +218,7 @@ async def google_oauth_callback(request: OAuthCallback, db: Session = Depends(ge
                 data={
                     "client_id": os.getenv("GOOGLE_CLIENT_ID"),
                     "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-                    "code": request.code,
+                    "code": code,
                     "grant_type": "authorization_code",
                     "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI")
                 }
@@ -264,21 +264,12 @@ async def google_oauth_callback(request: OAuthCallback, db: Session = Depends(ge
             access_token = create_access_token(data={"sub": str(user["id"])})
             refresh_token = create_refresh_token(data={"sub": str(user["id"])})
             
-            return {
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "token_type": "bearer",
-                "user": {
-                    "id": user["id"],
-                    "email": user["email"],
-                    "first_name": user["first_name"],
-                    "last_name": user["last_name"],
-                    "company_name": user["company_name"],
-                    "is_verified": user["is_verified"]
-                },
-                "user_existed": user_existed,
-                "message": "Welcome back!" if user_existed else "Account created successfully!"
-            }
+            # Redirect to frontend with tokens as URL parameters
+            from urllib.parse import quote
+            frontend_url = os.getenv("FRONTEND_URL", "https://nutrigence.app")
+            redirect_url = f"{frontend_url}/auth/google?access_token={quote(access_token)}&refresh_token={quote(refresh_token)}&user_id={user['id']}&email={quote(user['email'])}&first_name={quote(user.get('first_name', ''))}&last_name={quote(user.get('last_name', ''))}&user_existed={user_existed}"
+            
+            return RedirectResponse(url=redirect_url, status_code=302)
     except HTTPException:
         raise
     except Exception as e:

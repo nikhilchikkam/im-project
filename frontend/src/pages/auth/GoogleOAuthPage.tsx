@@ -14,11 +14,25 @@ const GoogleOAuthPage: React.FC = () => {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
-        const code = searchParams.get('code');
-        const error = searchParams.get('error');
-        const state = searchParams.get('state');
+        // Check for tokens in URL parameters (from backend redirect)
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        const userId = searchParams.get('user_id');
+        const email = searchParams.get('email');
+        const firstName = searchParams.get('first_name');
+        const lastName = searchParams.get('last_name');
+        const userExisted = searchParams.get('user_existed') === 'true';
 
-        console.log('OAuth callback params:', { code, error, state });
+        // Check for error in URL parameters
+        const error = searchParams.get('error');
+
+        console.log('OAuth callback params:', { 
+          accessToken: !!accessToken, 
+          refreshToken: !!refreshToken, 
+          userId, 
+          email, 
+          error 
+        });
 
         if (error) {
           setError(`OAuth authentication failed: ${error}`);
@@ -26,30 +40,27 @@ const GoogleOAuthPage: React.FC = () => {
           return;
         }
 
-        if (!code) {
-          setError('No authorization code received from Google');
-          setIsLoading(false);
-          return;
-        }
+        if (accessToken && refreshToken && userId && email) {
+          // Create user object from URL parameters
+          const user = {
+            id: parseInt(userId),
+            email: email,
+            first_name: firstName || undefined,
+            last_name: lastName || undefined,
+            company_name: undefined,
+            phone: undefined,
+            business_id: undefined,
+            auth_provider: 'google',
+            is_verified: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
 
-        // Send the code to our backend
-        const apiUrl = import.meta.env.VITE_API_URL || '';
-        const response = await fetch(`${apiUrl}/api/auth/google/callback`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ code, state }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
           // Call the login function to update AuthContext and trigger data fetching
-          login(data.access_token, data.refresh_token, data.user);
+          login(accessToken, refreshToken, user);
           
           // Show success message
-          if (data.user_existed) {
+          if (userExisted) {
             setToast({ message: 'Welcome back! Your existing account has been linked to Google.', type: 'success' });
           } else {
             setToast({ message: 'Account created successfully with Google!', type: 'success' });
@@ -60,7 +71,7 @@ const GoogleOAuthPage: React.FC = () => {
             navigate('/products');
           }, 1500); // Small delay to ensure context updates are processed
         } else {
-          setError(data.detail || 'Authentication failed');
+          setError('Invalid OAuth response. Please try again.');
         }
       } catch (err) {
         console.error('OAuth callback error:', err);
@@ -71,7 +82,7 @@ const GoogleOAuthPage: React.FC = () => {
     };
 
     handleOAuthCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, login]);
 
   if (isLoading) {
     return (
