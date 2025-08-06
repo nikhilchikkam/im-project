@@ -371,13 +371,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      // Check if user has been inactive for more than 2 minutes (reduced from 5)
-      const inactiveTime = Date.now() - lastActivity;
-      if (inactiveTime > 2 * 60 * 1000) {
-        // User is inactive, don't refresh token
-        console.log('User inactive for', Math.round(inactiveTime / 1000), 'seconds, skipping refresh');
-        return;
-      }
+             // Always refresh token regardless of inactivity
+       // (Removed inactivity check to prevent token failures)
 
       // Check if token will expire in the next 30 seconds (reduced from 5 minutes)
       const expirationTime = getTokenExpirationTime(accessToken);

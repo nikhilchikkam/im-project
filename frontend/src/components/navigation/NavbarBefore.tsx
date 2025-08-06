@@ -28,10 +28,14 @@ const NavbarBefore = () => {
   return (
     <header className="w-full px-4 md:px-6 py-3 md:py-4 flex justify-between items-center border-b">
       <div 
-        className="text-xl md:text-2xl font-bold cursor-pointer hover:text-blue-600 transition-colors"
+        className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
         onClick={() => navigate('/')}
       >
-        Nutrition Logo
+        <img 
+          src="/nutrigence.PNG" 
+          alt="Nutrigence" 
+          className="h-8 md:h-10 w-auto"
+        />
       </div>
       {/* Desktop nav */}
       <nav className="hidden sm:flex gap-3 md:gap-6 text-base font-medium">

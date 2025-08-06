@@ -547,11 +547,6 @@ async def get_product_status(
         raise HTTPException(status_code=500, detail=f"Failed to get product status: {str(e)}")
 
 # Wishlist Groups Endpoints
-@router.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "message": "Wishlist API is running"}
-
 @router.get("/wishlist-groups")
 async def get_wishlist_groups(
     current_user: User = Depends(get_current_user),

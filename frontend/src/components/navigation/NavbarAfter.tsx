@@ -32,10 +32,14 @@ const NavbarAfter = () => {
   return (
     <header className="w-full px-4 md:px-6 py-3 md:py-4 flex items-center justify-between border-b border-neutral-200">
       <div 
-        className="text-xl md:text-2xl font-bold cursor-pointer hover:text-blue-600 transition-colors"
+        className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
         onClick={() => navigate('/')}
       >
-        Nutrition Logo
+        <img 
+          src="/nutrigence_logo.PNG" 
+          alt="Nutrigence Logo" 
+          className="h-8 md:h-10 w-auto"
+        />
       </div>
       {/* Desktop nav */}
       <div className="hidden sm:flex items-center gap-4 md:gap-10">
