@@ -36,7 +36,7 @@ const NavbarAfter = () => {
         onClick={() => navigate('/')}
       >
         <img 
-          src="/nutrigence_logo.PNG" 
+          src="/nutrigence.PNG" 
           alt="Nutrigence Logo" 
           className="h-8 md:h-10 w-auto"
         />

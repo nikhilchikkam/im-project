@@ -33,7 +33,7 @@ const NavbarBefore = () => {
       >
         <img 
           src="/nutrigence.PNG" 
-          alt="Nutrigence" 
+          alt="Nutrigence Logo" 
           className="h-8 md:h-10 w-auto"
         />
       </div>
