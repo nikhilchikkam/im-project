@@ -10,7 +10,7 @@ import ProductResults from '../components/home/ProductResults';
 import { useCartWishlist } from '../contexts/CartWishlistContext';
 import { useAuth, useAuthenticatedFetch } from '../contexts/AuthContext';
 import { FolderPlus } from 'lucide-react';
-
+import LoginRequiredModal from '../components/common/LoginRequiredModal';
 
 
 const categories = [
@@ -54,6 +54,7 @@ const DEFAULT_LIMIT = 12;
 const HomePage = () => {
   const { addToWishlist, addToCart } = useCartWishlist();
   const { authenticatedFetch } = useAuthenticatedFetch();
+  const { user } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(categories.slice());
   const [viewType, setViewType] = useState<'card' | 'list'>('card');
@@ -72,6 +73,7 @@ const HomePage = () => {
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Debug selectedItems state changes
   useEffect(() => {
@@ -198,6 +200,11 @@ const HomePage = () => {
 
   // Selection handlers
   const handleItemSelect = (gtin: string) => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    
     setSelectedItems(prev => {
       const newSelection = prev.includes(gtin) 
         ? prev.filter(item => item !== gtin)
@@ -207,6 +214,11 @@ const HomePage = () => {
   };
 
   const handleSelectAll = () => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (selectAll) {
       setSelectedItems([]);
       setSelectAll(false);
@@ -219,6 +231,11 @@ const HomePage = () => {
 
   // Bulk action handlers
   const handleCompare = () => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+    
     if (selectedItems.length > 4) {
       alert('You can only compare up to 4 items at a time');
       return;
@@ -421,6 +438,14 @@ const HomePage = () => {
         selectedCategories={selectedCategories}
         handleGuidelineToggle={handleGuidelineToggle}
         handleCategoryChange={handleCategoryChange}
+      />
+      
+      {/* Login Required Modal */}
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        title="Login Required"
+        description="You need to be logged in to select products and use bulk actions."
       />
 
 

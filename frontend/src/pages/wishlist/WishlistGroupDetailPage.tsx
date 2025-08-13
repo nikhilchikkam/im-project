@@ -6,7 +6,7 @@ import NavbarAfter from '../../components/navigation/NavbarAfter';
 import ProductCard from '../../components/product/ProductCard';
 import ProductTable from '../../components/product/ProductTable';
 import { LayoutGrid, List, ArrowLeft } from 'lucide-react';
-import LoginPrompt from '../../components/common/LoginPrompt';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 const WishlistGroupDetailPage: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -90,14 +90,11 @@ const WishlistGroupDetailPage: React.FC = () => {
   // Show login prompt if not authenticated
   if (!user) {
     return (
-      <LoginPrompt
-        title="Sign in to view wishlist group"
-        description="You need to be logged in to view this wishlist group"
-        icon="📋"
-        primaryColor="blue"
-        primaryColorHover="blue"
-        linkColor="blue"
-        linkColorHover="blue"
+      <LoginRequiredModal
+        isOpen={true}
+        onClose={() => window.history.back()}
+        title="Login Required"
+        description="You need to be logged in to view this wishlist group."
       />
     );
   }

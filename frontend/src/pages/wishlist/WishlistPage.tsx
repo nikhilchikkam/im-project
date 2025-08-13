@@ -10,6 +10,7 @@ import HierarchyModal from '../../components/modals/HierarchyModal';
 import ProductDetailsModal from '../../features/products/ProductDetailsModal';
 import EditGroupModal from '../../features/wishlist/EditGroupModal';
 import RemoveWishlistItemModal from '../../components/modals/RemoveWishlistItemModal';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 
 const WishlistPage = () => {
@@ -303,39 +304,15 @@ const WishlistPage = () => {
     }
   };
   
-  // Redirect to login if not authenticated
+  // Show login modal if not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Your Wishlist</h2>
-            <p className="text-gray-600 mb-6">You need to be logged in to view and manage your wishlist.</p>
-            <div className="space-y-3">
-              <Link to="/login">
-                <button className="w-full bg-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-red-700 transition-colors">
-                  Log In
-                </button>
-              </Link>
-              <Link to="/signup">
-                <button className="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors">
-                  Create Account
-                </button>
-              </Link>
-            </div>
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <Link to="/" className="text-red-600 hover:text-red-700 text-sm font-medium">
-                ← Back to Home
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LoginRequiredModal
+        isOpen={true}
+        onClose={() => window.history.back()}
+        title="Login Required"
+        description="You need to be logged in to view and manage your wishlist."
+      />
     );
   }
 

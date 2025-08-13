@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCartWishlist } from '../../contexts/CartWishlistContext';
 import { useNavigate } from 'react-router-dom';
-import LoginPrompt from '../../components/common/LoginPrompt';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 const WishlistGroupsPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
@@ -59,14 +59,11 @@ const WishlistGroupsPage: React.FC = () => {
   // Show login prompt if not authenticated
   if (!user) {
     return (
-      <LoginPrompt
-        title="Sign in to view wishlist groups"
-        description="Create and manage your wishlist groups to organize your favorite products"
-        icon="📋"
-        primaryColor="blue"
-        primaryColorHover="blue"
-        linkColor="blue"
-        linkColorHover="blue"
+      <LoginRequiredModal
+        isOpen={true}
+        onClose={() => window.history.back()}
+        title="Login Required"
+        description="You need to be logged in to view and manage your wishlist groups."
       />
     );
   }

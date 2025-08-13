@@ -1,48 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCartWishlist } from '../../contexts/CartWishlistContext';
 import NavbarAfter from '../../components/navigation/NavbarAfter';
 import CartList from '../../features/cart/CartList';
-import LoginPrompt from '../../components/common/LoginPrompt';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 const CartPage = () => {
   const { user } = useAuth();
   const { cartItems, cartCount, clearCart, loading } = useCartWishlist();
+  const [showLoginModal, setShowLoginModal] = useState(false);
   
-  // Redirect to login if not authenticated
+  // Show login modal if not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Your Cart</h2>
-            <p className="text-gray-600 mb-6">You need to be logged in to view and manage your shopping cart.</p>
-            <div className="space-y-3">
-              <Link to="/login">
-                <button className="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">
-                  Log In
-                </button>
-              </Link>
-              <Link to="/signup">
-                <button className="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors">
-                  Create Account
-                </button>
-              </Link>
-            </div>
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <Link to="/" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                ← Back to Home
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LoginRequiredModal
+        isOpen={true}
+        onClose={() => window.history.back()}
+        title="Login Required"
+        description="You need to be logged in to view and manage your shopping cart."
+      />
     );
   }
 

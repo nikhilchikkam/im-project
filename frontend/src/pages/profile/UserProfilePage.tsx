@@ -6,44 +6,21 @@ import ProfileSidebar from '../../features/profile/ProfileSidebar';
 import type { NavItem, SwitchItem } from '../../features/profile/ProfileSidebar';
 import InfoCard from '../../features/profile/InfoCard';
 import { User, ShoppingCart, Heart, Settings, HelpCircle } from 'lucide-react';
+import LoginRequiredModal from '../../components/common/LoginRequiredModal';
 
 const UserProfilePage = () => {
   const { user, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Redirect to login if not authenticated
+  // Show login modal if not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Your Profile</h2>
-            <p className="text-gray-600 mb-6">You need to be logged in to view and manage your profile.</p>
-            <div className="space-y-3">
-              <Link to="/login">
-                <button className="w-full bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors">
-                  Log In
-                </button>
-              </Link>
-              <Link to="/signup">
-                <button className="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors">
-                  Create Account
-                </button>
-              </Link>
-            </div>
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <Link to="/" className="text-purple-600 hover:text-purple-700 text-sm font-medium">
-                ← Back to Home
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LoginRequiredModal
+        isOpen={true}
+        onClose={() => window.history.back()}
+        title="Login Required"
+        description="You need to be logged in to view and manage your profile."
+      />
     );
   }
 
