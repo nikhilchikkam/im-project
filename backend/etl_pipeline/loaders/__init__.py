@@ -1,21 +1,11 @@
 """
-ETL Loaders Package
+ETL Loaders Package - Batch-Parallel Architecture
 """
 
-from .base_loader import ETLLoader
-from .product_loader import ProductLoader
-from .allergen_loader import AllergenLoader
-from .nutrition_loader import NutritionLoader
-from .serving_loader import ServingLoader
-from .diet_claim_loader import DietClaimLoader
-from .image_url_loader import ImageURLLoader
+from .base_loader import BaseLoader
+from .batch_loader import BatchLoader
 
 __all__ = [
-    'ETLLoader',
-    'ProductLoader', 
-    'AllergenLoader',
-    'NutritionLoader',
-    'ServingLoader',
-    'DietClaimLoader',
-    'ImageURLLoader'
+    'BaseLoader',
+    'BatchLoader'
 ] 

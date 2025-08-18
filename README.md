@@ -35,15 +35,10 @@ Nutrigence is a comprehensive food intelligence platform that helps restaurants,
 ## 🛠️ Key Features
 
 ### 🔍 Product Intelligence
-- Advanced product search and filtering
+- Product search and filtering
 - Nutrition guideline compliance checking
-- Product comparison tools
 - Smart snack identification
 
-### 👥 Team Collaboration
-- Shared wishlists and product lists
-- Group-based organization
-- Real-time collaboration features
 
 ### 🔐 Authentication
 - Google OAuth integration
@@ -57,33 +52,72 @@ Nutrigence is a comprehensive food intelligence platform that helps restaurants,
 - Allergen tracking
 - Dietary claim support
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Prerequisites
-- Node.js 18+
+### Option 1: Automated Setup (Recommended)
+
+**For macOS/Linux:**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+**For Windows:**
+```bash
+setup.bat
+```
+
+### Option 2: Manual Setup
+
+#### Prerequisites
+- Node.js 20+
 - Python 3.9+
 - PostgreSQL
-- Docker (optional)
+- Git
 
-### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
+#### Step-by-step Setup
 
-### Backend Setup
-```bash
-cd backend
-pip install -r requirements.txt
-python api.py
-```
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd Mendon
+   ```
 
-### Database Setup
-```bash
-cd backend/db_scripts
-python setup_database.py
-```
+2. **Set up environment files**
+   ```bash
+   # Backend
+   cp backend/.env.example backend/.env
+   # Frontend  
+   cp frontend/.env.example frontend/.env
+   ```
+
+3. **Set up database**
+   ```bash
+   # Using Docker (recommended)
+   docker run --name nutrigence-postgres -e POSTGRES_DB=nutrigence_db -e POSTGRES_USER=nutrigence_user -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres:15
+   ```
+
+4. **Set up backend**
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # or venv\Scripts\activate on Windows
+   pip install -r requirements.txt
+   python api.py
+   ```
+
+5. **Set up frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+6. **Visit the application**
+   - Frontend: http://localhost:5173
+   - Backend API docs: http://localhost:8000/docs
+
+📚 **For detailed setup instructions, see [LOCAL_DEVELOPMENT_SETUP.md](LOCAL_DEVELOPMENT_SETUP.md)**
 
 ## 📁 Project Structure
 
@@ -128,7 +162,3 @@ The ETL pipeline in `backend/etl_pipeline/` handles data processing and loading.
 ## 📄 License
 
 Mendon Group. 2025. All rights reserved.
-
----
-
-**Built with ❤️ by the Mendon Group team**

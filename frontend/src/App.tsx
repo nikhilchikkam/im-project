@@ -24,6 +24,7 @@ import SubscriptionPage from './pages/checkout/SubscriptionPage';
 import { MagicLinkVerificationPage } from './pages/auth/MagicLinkVerificationPage';
 import GoogleOAuthPage from './pages/auth/GoogleOAuthPage';
 import AppleOAuthPage from './pages/auth/AppleOAuthPage';
+import ProductHuntPage from './pages/ProductHuntPage';
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
       <CartWishlistProvider>
         <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/product-hunt" element={<ProductHuntPage />} />
 
         <Route path="/auth" element={<AuthLandingPage />} />
 
