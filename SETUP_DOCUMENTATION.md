@@ -13,9 +13,7 @@ Before setting up the project, ensure you have the following installed:
 - **Git** - [Download here](https://git-scm.com/downloads)
 
 ### Optional Software
-- **Docker** - For containerized deployment
 - **VS Code** - Recommended IDE with extensions for React and Python
-- **Postman** - For API testing
 
 ## 🚀 Quick Start
 
@@ -231,79 +229,6 @@ npm run preview
 npm run lint
 ```
 
-## 🐳 Docker Setup (Optional)
-
-If you prefer using Docker:
-
-### 1. Install Docker
-
-Download and install Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop)
-
-### 2. Docker Compose
-
-Create a `docker-compose.yml` file in the root directory:
-
-```yaml
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: nutrigence_db
-      POSTGRES_USER: nutrigence_user
-      POSTGRES_PASSWORD: your_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  neo4j:
-    image: neo4j:5.0
-    environment:
-      NEO4J_AUTH: neo4j/your-neo4j-password
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    volumes:
-      - neo4j_data:/data
-
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://nutrigence_user:your_password@postgres:5432/nutrigence_db
-    depends_on:
-      - postgres
-      - neo4j
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:
-  neo4j_data:
-```
-
-### 3. Run with Docker
-
-```bash
-# Build and start all services
-docker-compose up --build
-
-# Run in background
-docker-compose up -d
-
-# Stop services
-docker-compose down
-```
 
 ## 🔍 Troubleshooting
 
