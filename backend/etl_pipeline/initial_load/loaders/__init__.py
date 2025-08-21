@@ -3,6 +3,7 @@ ETL Loaders Package
 """
 
 from .base_loader import BaseLoader
+from .simple_loader import SimpleLoader
 from .batch_loader import BatchLoader
 from .product_loader import ProductLoader
 from .serving_loader import ServingLoader
@@ -11,6 +12,7 @@ from .image_url_loader import ImageUrlLoader
 
 __all__ = [
     'BaseLoader',
+    'SimpleLoader',
     'BatchLoader',
     'ProductLoader',
     'ServingLoader',

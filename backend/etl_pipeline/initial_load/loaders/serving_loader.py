@@ -2,9 +2,9 @@
 Serving Loader Module
 """
 
-from .base_loader import ETLLoader
+from .simple_loader import SimpleLoader
 
-class ServingLoader(ETLLoader):
+class ServingLoader(SimpleLoader):
     """Loader for serving table"""
     
     def __init__(self, database_url):

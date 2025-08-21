@@ -182,4 +182,7 @@ class BaseLoader(ABC):
     @abstractmethod
     def _merge_allergen_from_staging(self) -> int:
         """Merge allergen data from staging to live table"""
-        pass 
+        pass
+
+# Create an alias for backward compatibility
+ETLLoader = BaseLoader 

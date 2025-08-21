@@ -3,9 +3,9 @@ Diet Claim Loader Module
 """
 
 import json
-from .base_loader import ETLLoader
+from .simple_loader import SimpleLoader
 
-class DietClaimLoader(ETLLoader):
+class DietClaimLoader(SimpleLoader):
     """Loader for product_diet_claims table"""
     
     def __init__(self, database_url):

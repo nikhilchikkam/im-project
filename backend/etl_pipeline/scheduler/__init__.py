@@ -5,10 +5,12 @@ Scheduler for Incremental ETL Updates
 from .scheduler import IncrementalETLScheduler
 from .config import SchedulerConfig
 from .incremental_loader import IncrementalLoader
+from .spaces_etl_orchestrator import SpacesETLOrchestrator
 
 __version__ = "1.0.0"
 __all__ = [
     "IncrementalETLScheduler",
-    "SchedulerConfig", 
-    "IncrementalLoader"
+    "SchedulerConfig",
+    "IncrementalLoader",
+    "SpacesETLOrchestrator"
 ]

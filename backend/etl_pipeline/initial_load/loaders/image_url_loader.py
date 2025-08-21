@@ -3,9 +3,9 @@ Image URL Loader Module
 """
 
 import json
-from .base_loader import ETLLoader
+from .simple_loader import SimpleLoader
 
-class ImageURLLoader(ETLLoader):
+class ImageURLLoader(SimpleLoader):
     """Loader for product_images table"""
     
     def __init__(self, database_url):

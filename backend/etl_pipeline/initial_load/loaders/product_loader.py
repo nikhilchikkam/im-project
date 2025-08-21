@@ -3,9 +3,9 @@ Product Loader Module
 """
 
 import json
-from .base_loader import ETLLoader
+from .simple_loader import SimpleLoader
 
-class ProductLoader(ETLLoader):
+class ProductLoader(SimpleLoader):
     """Loader for products table"""
     
     def __init__(self, database_url):
