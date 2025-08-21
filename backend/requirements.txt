@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
-psycopg2-binary
-python-dotenv
+psycopg2-binary==2.9.7
+python-dotenv==1.0.0
 SQLAlchemy
 neo4j
 PyJWT
@@ -11,3 +11,10 @@ fastapi-mail
 httpx
 authlib
 itsdangerous
+
+# ETL / Data
+pandas==2.0.3
+openpyxl==3.1.2
+boto3==1.28.44
+oneworldsync==0.1.0
+schedule==1.2.0
