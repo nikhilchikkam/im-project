@@ -28,11 +28,11 @@ class BatchLoader(BaseLoader):
     def _load_allergen_mapping(self):
         """Load allergen mapping from Excel file or JSON file"""
         try:
-            # First try to load JSON file from scheduler directory
+            # First try to load JSON file from manual_etl directory
             json_paths = [
-                "scheduler/allergen_mapping.json",
-                "../scheduler/allergen_mapping.json",
-                "../../scheduler/allergen_mapping.json"
+                "manual_etl/allergen_mapping.json",
+                "../manual_etl/allergen_mapping.json",
+                "../../manual_etl/allergen_mapping.json"
             ]
             
             for path in json_paths:

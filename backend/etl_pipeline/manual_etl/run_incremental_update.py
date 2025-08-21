@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 # Add the backend directory to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from etl_pipeline.scheduler.incremental_loader import IncrementalLoader
+from etl_pipeline.manual_etl.etl_incremental_loader import IncrementalLoader
 
 # Configure logging
 logging.basicConfig(
