@@ -34,6 +34,9 @@ class ETLConfig:
     # API Configuration
     API_DELAY = float(os.getenv('API_DELAY', '0.1'))  # Delay between API calls
     
+    # Database Configuration
+    DATABASE_URL = os.getenv('DATABASE_URL')
+    
     @classmethod
     def validate(cls):
         """Validate required configuration"""

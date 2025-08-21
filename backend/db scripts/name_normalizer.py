@@ -84,10 +84,10 @@ def update_normalized_names_batched():
     with engine.begin() as conn:
         gtin_rows = conn.execute(text('''
             SELECT gtin, name FROM products
-            WHERE nutrient_avilable = TRUE
+            WHERE nutrient_available = TRUE
         ''')).fetchall()
         gtins = [row[0] for row in gtin_rows]
-        logging.info(f'Fetched {len(gtins)} products with nutrient_avilable = TRUE.')
+        logging.info(f'Fetched {len(gtins)} products with nutrient_available = TRUE.')
         for i in range(0, len(gtins), BATCH_SIZE):
             batch_gtins = gtins[i:i+BATCH_SIZE]
             # Fetch names for this batch

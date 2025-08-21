@@ -1,17 +1,16 @@
 import os
 import pandas as pd
-import psycopg2
+import logging
+from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-# Load DB credentials
+# Load environment variables
 load_dotenv()
-DB_CONFIG = {
-    "dbname": os.getenv("POSTGRES_DB"),
-    "user": os.getenv("POSTGRES_USER"),
-    "password": os.getenv("POSTGRES_PASSWORD"),
-    "host": os.getenv("POSTGRES_HOST", "localhost"),
-    "port": os.getenv("POSTGRES_PORT", "5432"),
-}
+
+DATABASE_URL = os.getenv('DATABASE_URL')
+engine = create_engine(DATABASE_URL)
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 # Step 1: Load CSV with unit code → name mapping
 mapping_df = pd.read_csv("Filtered_Nutrient_Attributes.csv")
@@ -23,14 +22,14 @@ mapping_df = mapping_df[mapping_df["code"].astype(str).str.strip() != ""]
 unit_mapping = dict(zip(mapping_df["code"], mapping_df["name"]))
 
 # Step 3: Connect and update DB
-with psycopg2.connect(**DB_CONFIG) as conn:
-    with conn.cursor() as cur:
-        for code, name in unit_mapping.items():
-            cur.execute("""
-                UPDATE product_nutrition
-                SET unit_name = %s
-                WHERE unit = %s
-            """, (name, code))
-        conn.commit()
+logging.info("Starting unit name updates...")
+with engine.begin() as conn:
+    for code, name in unit_mapping.items():
+        conn.execute(text("""
+            UPDATE product_nutrition
+            SET unit_name = :name
+            WHERE unit = :code
+        """), {"name": name, "code": code})
+        logging.info(f"Updated unit '{code}' to '{name}'")
 
-print("unit_name column updated successfully.")
+logging.info("Unit name column updated successfully.")

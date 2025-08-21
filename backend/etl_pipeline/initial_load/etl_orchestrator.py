@@ -15,7 +15,7 @@ from queue import Empty
 import psycopg2
 from dotenv import load_dotenv
 
-from loaders.batch_loader import BatchLoader
+from .loaders.batch_loader import BatchLoader
 
 # Load environment variables
 load_dotenv('../.env')
