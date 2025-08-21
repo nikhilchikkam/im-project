@@ -30,3 +30,5 @@ results/
 Thumbs.db
 ".idea/" 
 "backend/generate_secrets.py" 
+
+!backend/etl_pipeline/scheduler/allergen_mapping.json
