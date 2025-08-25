@@ -28,11 +28,11 @@ class BatchLoader(BaseLoader):
     def _load_allergen_mapping(self):
         """Load allergen mapping from Excel file or JSON file"""
         try:
-            # First try to load JSON file from manual_etl directory
+            # First try to load JSON file from reference_files directory
             json_paths = [
-                "manual_etl/allergen_mapping.json",
-                "../manual_etl/allergen_mapping.json",
-                "../../manual_etl/allergen_mapping.json"
+                "../reference_files/allergen_mapping.json",
+                "../../reference_files/allergen_mapping.json",
+                "reference_files/allergen_mapping.json"
             ]
             
             for path in json_paths:
@@ -96,7 +96,9 @@ class BatchLoader(BaseLoader):
                 nutrient_code VARCHAR(20),
                 nutrient_label VARCHAR(100),
                 value DECIMAL(10,3),
-                unit VARCHAR(20)
+                unit VARCHAR(20),
+                standardized_unit VARCHAR(20),
+                standardized_value DECIMAL(10,3)
             ) ON COMMIT PRESERVE ROWS
         """)
         
@@ -368,7 +370,9 @@ class BatchLoader(BaseLoader):
                             'nutrient_code': code,
                             'nutrient_label': label,
                             'value': float(value),
-                            'unit': unit
+                            'unit': unit,
+                            'standardized_unit': None,
+                            'standardized_value': None
                         }
     
     def _extract_allergen_data(self, batch_data: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
@@ -566,11 +570,11 @@ class BatchLoader(BaseLoader):
         if rows:
             insert_sql = """
                 INSERT INTO staging_nutrition (
-                    gtin, nutrient_code, nutrient_label, value, unit
+                    gtin, nutrient_code, nutrient_label, value, unit, standardized_unit, standardized_value
                 ) VALUES %s
             """
             values = [
-                (row['gtin'], row['nutrient_code'], row['nutrient_label'], row['value'], row['unit'])
+                (row['gtin'], row['nutrient_code'], row['nutrient_label'], row['value'], row['unit'], row['standardized_unit'], row['standardized_value'])
                 for row in rows
             ]
             execute_values(self.cursor, insert_sql, values)
@@ -608,6 +612,89 @@ class BatchLoader(BaseLoader):
             execute_values(self.cursor, insert_sql, values)
         
         return count
+
+    def _standardize_nutrition_in_staging(self):
+        """Standardize nutrition data in staging table using the same logic as standardize_nutrition.sql"""
+        logger.info("Standardizing nutrition data in staging table...")
+        
+        # Standardize each nutrient type
+        nutrients_to_standardize = [
+            ('added_sugars', 'g', [
+                ('GRM', 1.0), ('MGM', 0.001), ('MC', 0.000001), ('ONZ', 28.3495), ('GRN', 0.06479891)
+            ]),
+            ('calcium', 'mg', [
+                ('MGM', 1.0), ('GRM', 1000.0), ('MC', 0.001), ('ONZ', 28349.5), ('GRN', 64.79891)
+            ]),
+            ('calories', 'kcal', [
+                ('E14', 1.0), ('D70', 1.0), ('KJO', 0.239006), ('JOU', 0.000239006)
+            ]),
+            ('cholesterol', 'mg', [
+                ('MGM', 1.0), ('GRM', 1000.0), ('MC', 0.001), ('ONZ', 28349.5), ('GRN', 64.79891)
+            ]),
+            ('dietary_fiber', 'g', [
+                ('GRM', 1.0), ('MGM', 0.001), ('MC', 0.000001), ('ONZ', 28.3495), ('GRN', 0.06479891)
+            ]),
+            ('iron', 'mg', [
+                ('MGM', 1.0), ('GRM', 1000.0), ('MC', 0.001), ('ONZ', 28349.5), ('GRN', 64.79891)
+            ]),
+            ('potassium', 'mg', [
+                ('MGM', 1.0), ('GRM', 1000.0), ('MC', 0.001), ('ONZ', 28349.5), ('GRN', 64.79891)
+            ]),
+            ('protein', 'g', [
+                ('GRM', 1.0), ('MGM', 0.001), ('MC', 0.000001), ('ONZ', 28.3495), ('GRN', 0.06479891)
+            ]),
+            ('saturated_fat', 'g', [
+                ('GRM', 1.0), ('MGM', 0.001), ('MC', 0.000001), ('ONZ', 28.3495), ('GRN', 0.06479891)
+            ]),
+            ('sodium', 'mg', [
+                ('MGM', 1.0), ('GRM', 1000.0), ('MC', 0.001), ('ONZ', 28349.5), ('GRN', 64.79891)
+            ]),
+            ('sugars', 'g', [
+                ('GRM', 1.0), ('MGM', 0.001), ('MC', 0.000001), ('ONZ', 28.3495), ('GRN', 0.06479891)
+            ]),
+            ('total_carbohydrate', 'g', [
+                ('GRM', 1.0), ('MGM', 0.001), ('MC', 0.000001), ('ONZ', 28.3495), ('GRN', 0.06479891)
+            ]),
+            ('total_fat', 'g', [
+                ('GRM', 1.0), ('MGM', 0.001), ('MC', 0.000001), ('ONZ', 28.3495), ('GRN', 0.06479891)
+            ]),
+            ('trans_fat', 'g', [
+                ('GRM', 1.0), ('MGM', 0.001), ('MC', 0.000001), ('ONZ', 28.3495), ('GRN', 0.06479891)
+            ]),
+            ('vitamin_d', 'mcg', [
+                ('MC', 1.0), ('MGM', 1000.0), ('GRM', 1000000.0), ('ONZ', 28349500.0), ('GRN', 64798910.0)
+            ])
+        ]
+        
+        for nutrient_label, standardized_unit, conversions in nutrients_to_standardize:
+            # Build the conversion SQL
+            conversion_cases = []
+            for unit, multiplier in conversions:
+                conversion_cases.append(f"WHEN '{unit}' THEN value * {multiplier}")
+            
+            if conversion_cases:
+                conversion_sql = f"""
+                    UPDATE staging_nutrition 
+                    SET 
+                        standardized_unit = '{standardized_unit}',
+                        standardized_value = CASE unit {' '.join(conversion_cases)} END
+                    WHERE LOWER(nutrient_label) = LOWER('{nutrient_label}')
+                      AND unit IN ({', '.join([f"'{unit}'" for unit, _ in conversions])})
+                """
+                self.cursor.execute(conversion_sql)
+                
+                # Set FLAGGED_UNIT for unconverted values
+                flag_sql = f"""
+                    UPDATE staging_nutrition 
+                    SET 
+                        standardized_unit = 'FLAGGED_UNIT',
+                        standardized_value = NULL
+                    WHERE LOWER(nutrient_label) = LOWER('{nutrient_label}')
+                      AND standardized_unit IS NULL
+                """
+                self.cursor.execute(flag_sql)
+        
+        logger.info("Nutrition standardization in staging table completed")
 
     def _merge_products_from_staging(self) -> int:
         """Merge products from staging to final table"""
@@ -671,13 +758,15 @@ class BatchLoader(BaseLoader):
     def _merge_nutrition_from_staging(self) -> int:
         """Merge nutrition data from staging to live table - matches original exactly"""
         self.cursor.execute("""
-            INSERT INTO product_nutrition (gtin, nutrient_code, nutrient_label, value, unit)
-            SELECT gtin, nutrient_code, nutrient_label, value, unit
+            INSERT INTO product_nutrition (gtin, nutrient_code, nutrient_label, value, unit, standardized_unit, standardized_value)
+            SELECT gtin, nutrient_code, nutrient_label, value, unit, standardized_unit, standardized_value
             FROM staging_nutrition
             ON CONFLICT (gtin, nutrient_code) DO UPDATE SET
                 nutrient_label = EXCLUDED.nutrient_label,
                 value = EXCLUDED.value,
-                unit = EXCLUDED.unit
+                unit = EXCLUDED.unit,
+                standardized_unit = EXCLUDED.standardized_unit,
+                standardized_value = EXCLUDED.standardized_value
         """)
         
         return self.cursor.rowcount
@@ -713,7 +802,7 @@ class BatchLoader(BaseLoader):
             self.truncate_staging()
             
             products = batch_data.get('products', [])
-            logger.info(f"Processing {len(products)} products with all data types through staging")
+            # Removed verbose processing log
             
             # Extract all data types
             parse_start = time.time()
@@ -735,6 +824,9 @@ class BatchLoader(BaseLoader):
             allergen_count = self._copy_allergen_to_staging(allergen_data)
             copy_time = time.time() - copy_start
             
+            # Standardize nutrition data in staging
+            self._standardize_nutrition_in_staging()
+
             # Merge all data from staging to final tables
             merge_start = time.time()
             products_merged = self._merge_products_from_staging()
@@ -750,15 +842,9 @@ class BatchLoader(BaseLoader):
             
             total_time = time.time() - start_time
             
-            # Log comprehensive performance metrics
-            logger.info(f"Comprehensive batch processed in {total_time:.2f}s - "
-                       f"Parse: {parse_time:.2f}s, Copy: {copy_time:.2f}s, Merge: {merge_time:.2f}s - "
-                       f"Products: {product_count} copied, {products_merged} merged, "
-                       f"Serving: {serving_count} copied, {serving_merged} merged, "
-                       f"Diet Claims: {diet_claim_count} copied, {diet_claims_merged} merged, "
-                       f"Image URLs: {image_url_count} copied, {image_urls_merged} merged, "
-                       f"Nutrition: {nutrition_count} copied, {nutrition_merged} merged, "
-                       f"Allergen: {allergen_count} copied, {allergen_merged} merged")
+            # Log concise performance metrics
+            logger.info(f"Batch processed in {total_time:.2f}s: "
+                       f"{product_count} products, {nutrition_count} nutrition, {allergen_count} allergens")
             
             return {
                 'products_copied': product_count,

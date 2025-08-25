@@ -280,27 +280,27 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div className="font-bold text-lg mb-3 leading-tight line-clamp-2 min-h-[3rem]">{displayTitle}</div>
           <div className="mb-3 flex flex-wrap gap-2 min-h-[4.5rem]">
             {category && (
-              <span className="inline-flex items-center bg-green-50 text-green-700 text-xs font-medium rounded-full px-2 py-1">
-                <span className="w-1 h-1 bg-green-500 rounded-full mr-1"></span>
-                {category}
+              <span className="inline-flex items-center bg-green-50 text-green-700 text-xs font-medium rounded-full px-2 py-1 h-6 min-w-[80px] justify-center">
+                <span className="w-1 h-1 bg-green-500 rounded-full mr-1 flex-shrink-0"></span>
+                <span className="truncate">{category}</span>
               </span>
             )}
             {isSmartSnack && (
-              <span className="inline-flex items-center bg-blue-50 text-blue-700 text-xs font-medium rounded-full px-2 py-1">
-                <span className="w-1 h-1 bg-blue-500 rounded-full mr-1"></span>
-                Smart Snack
+              <span className="inline-flex items-center bg-blue-50 text-blue-700 text-xs font-medium rounded-full px-2 py-1 h-6 min-w-[80px] justify-center">
+                <span className="w-1 h-1 bg-blue-500 rounded-full mr-1 flex-shrink-0"></span>
+                <span className="truncate">Smart Snack</span>
               </span>
             )}
             {isGoodChoice === 'true' && (
-              <span className="inline-flex items-center bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full px-2 py-1">
-                <span className="w-1 h-1 bg-emerald-500 rounded-full mr-1"></span>
-                Good Choice
+              <span className="inline-flex items-center bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full px-2 py-1 h-6 min-w-[80px] justify-center">
+                <span className="w-1 h-1 bg-emerald-500 rounded-full mr-1 flex-shrink-0"></span>
+                <span className="truncate">Good Choice</span>
               </span>
             )}
             {novaLabel && (
-              <span className="inline-flex items-center bg-orange-50 text-orange-700 text-xs font-medium rounded-full px-2 py-1">
-                <span className="w-1 h-1 bg-orange-500 rounded-full mr-1"></span>
-                {novaLabel}
+              <span className="inline-flex items-center bg-orange-50 text-orange-700 text-xs font-medium rounded-full px-2 py-1 h-6 min-w-[80px] justify-center">
+                <span className="w-1 h-1 bg-orange-500 rounded-full mr-1 flex-shrink-0"></span>
+                <span className="truncate">{novaLabel}</span>
               </span>
             )}
           </div>

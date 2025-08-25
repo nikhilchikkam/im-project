@@ -31,84 +31,79 @@ Create environment files for both frontend and backend:
 #### Backend Environment (`.env` in `backend/` directory)
 
 ```bash
-# Database Configuration
-DATABASE_URL=postgresql://username:password@localhost:5432/nutrigence_db
+ONEWORLDSYNC_APP_ID=
+ONEWORLDSYNC_SECRET_KEY=
+ONEWORLDSYNC_USER_GLN=
+ONEWORLDSYNC_CONTENT1_API_URL=https://content1-api.1worldsync.com
 
-# Authentication
-JWT_SECRET_KEY=your-super-secret-jwt-key-here
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
 
-# Google OAuth (if using)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
+# JWT Configuration (generate these with generate_secrets.py)
+SECRET_KEY=
+MAGIC_LINK_SECRET_KEY=
 
-# Email Configuration (for magic links)
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
-MAIL_FROM=your-email@gmail.com
-MAIL_PORT=587
+# Email Configuration (Gmail)
+MAIL_USERNAME=noreply.mendon@gmail.com
+MAIL_PASSWORD=
+MAIL_FROM=Nutrigence App <noreply@nutrigence.app>
 MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_TLS=True
+MAIL_SSL=False
 
-# Neo4j Configuration (if using)
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=your-neo4j-password
-
-# Environment
-ENVIRONMENT=development
+# Frontend URL
 FRONTEND_URL=http://localhost:5173
-```
 
-#### Frontend Environment (`.env` in `frontend/` directory)
+# Google OAuth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=
 
-```bash
+
+# Database Configuration
+DATABASE_URL=
+
+# JWT Configuration (generate these with generate_secrets.py)
+SECRET_KEY=
+MAGIC_LINK_SECRET_KEY=
+
+
+# Frontend URL
+FRONTEND_URL=http://localhost:5173
+
+
+# Neo4j Configuration
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=
+NEO4J_PASSWORD=
+
+# DigitalOcean Spaces Configuration
+SPACES_REGION=sfo3
+SPACES_BUCKET=nutrigence-etl
+SPACES_SECRET_KEY=/iBQhJ+jWk2FyRkLZTbyCVh2RjTdlmoSy4G+E/MdoMY
+SPACES_ACCESS_KEY=DO00CAZ6LEZBMXA7WV4X
+
+# OneWorldSync Configuration
+OWS_BATCH_SIZE=1000
+OWS_MAX_RETRIES=3
+OWS_RETRY_DELAY=5
+
+# ETL Configuration
+ETL_BATCH_SIZE=1000
+ETL_MAX_WORKERS=4
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FILE=etl_pipeline.log
+
 # API Configuration
-VITE_API_URL=http://localhost:8000
-
-# Google OAuth (if using)
-VITE_GOOGLE_CLIENT_ID=your-google-client-id
-
-# Environment
-VITE_ENVIRONMENT=development
+API_DELAY=0.1 
 ```
 
 ### 3. Database Setup
 
 #### PostgreSQL Installation
 
-**Windows:**
-1. Download PostgreSQL from the official website
-2. Run the installer and follow the setup wizard
-3. Remember the password you set for the `postgres` user
-4. Add PostgreSQL to your system PATH
 
-**macOS:**
-```bash
-brew install postgresql
-brew services start postgresql
-```
-
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-```
-
-#### Create Database
-
-```bash
-# Connect to PostgreSQL
-psql -U postgres
-
-# Create database and user
-CREATE DATABASE nutrigence_db;
-CREATE USER nutrigence_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE nutrigence_db TO nutrigence_user;
-\q
 ```
 
 ### 4. Backend Setup
@@ -123,16 +118,11 @@ python -m venv venv
 # Activate virtual environment
 # Windows:
 venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run database scripts (if available)
-cd db_scripts
-python main.py
-cd ..
 
 # Start the backend server
 python api.py
@@ -164,15 +154,13 @@ The frontend should now be running on `http://localhost:5173`
 The backend uses Python 3.9+ with the following key dependencies:
 
 - **FastAPI** - Web framework
-- **SQLAlchemy** - ORM for database operations
 - **PostgreSQL** - Primary database
 - **Neo4j** - Graph database (optional)
 - **JWT** - Authentication tokens
-- **Pydantic** - Data validation
 
 #### 2. Database Schema
 
-The application uses several database tables:
+The application uses several database tables like:
 
 - `users` - User accounts and authentication
 - `products` - Product information and nutrition data
@@ -212,192 +200,3 @@ The frontend is built with:
   "clsx": "^2.1.1"
 }
 ```
-
-#### 3. Build Commands
-
-```bash
-# Development
-npm run dev
-
-# Production build
-npm run build
-
-# Preview production build
-npm run preview
-
-# Linting
-npm run lint
-```
-
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-#### 1. Database Connection Issues
-
-**Problem**: Cannot connect to PostgreSQL
-**Solution**:
-- Verify PostgreSQL is running
-- Check connection string in `.env`
-- Ensure database and user exist
-- Verify firewall settings
-
-#### 2. Python Dependencies
-
-**Problem**: Import errors or missing packages
-**Solution**:
-```bash
-# Reinstall dependencies
-pip uninstall -r requirements.txt
-pip install -r requirements.txt
-
-# Check Python version
-python --version
-```
-
-#### 3. Node.js Issues
-
-**Problem**: npm install fails
-**Solution**:
-```bash
-# Clear npm cache
-npm cache clean --force
-
-# Delete node_modules and reinstall
-rm -rf node_modules package-lock.json
-npm install
-```
-
-#### 4. Port Conflicts
-
-**Problem**: Port already in use
-**Solution**:
-```bash
-# Find process using port
-# Windows:
-netstat -ano | findstr :8000
-# macOS/Linux:
-lsof -i :8000
-
-# Kill process
-kill -9 <PID>
-```
-
-### Environment-Specific Issues
-
-#### Windows
-
-- Use `venv\Scripts\activate` for virtual environment
-- Ensure PostgreSQL is in PATH
-- Use Windows-compatible line endings
-
-#### macOS
-
-- Use Homebrew for package management
-- Ensure Xcode Command Line Tools are installed
-- Use `source venv/bin/activate` for virtual environment
-
-#### Linux
-
-- Install system dependencies: `sudo apt install python3-dev libpq-dev`
-- Use `source venv/bin/activate` for virtual environment
-- Ensure proper file permissions
-
-## 📊 Data Loading
-
-### Initial Data Setup
-
-The project includes scripts for loading initial data:
-
-```bash
-cd backend/db_scripts
-
-# Load product data
-python product_loader.py
-
-# Load nutrition data
-python nutrition_loader.py
-
-# Load serving data
-python serving_loader.py
-```
-
-### Sample Data
-
-If you need sample data for testing:
-
-```bash
-# Run database setup with sample data
-python main.py --sample-data
-```
-
-## 🔐 Authentication Setup
-
-### Google OAuth (Optional)
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing
-3. Enable Google+ API
-4. Create OAuth 2.0 credentials
-5. Add authorized redirect URIs:
-   - `http://localhost:5173/auth/callback`
-   - `https://yourdomain.com/auth/callback`
-6. Copy Client ID and Secret to environment variables
-
-### JWT Configuration
-
-Generate a secure JWT secret:
-
-```python
-import secrets
-print(secrets.token_urlsafe(32))
-```
-
-## 🚀 Deployment
-
-### Production Environment Variables
-
-```bash
-# Backend
-ENVIRONMENT=production
-DATABASE_URL=postgresql://user:pass@host:5432/db
-JWT_SECRET_KEY=your-production-secret
-
-# Frontend
-VITE_API_URL=https://your-api-domain.com
-VITE_ENVIRONMENT=production
-```
-
-### Build for Production
-
-```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-python api.py
-
-# Frontend
-cd frontend
-npm run build
-```
-
-## 📚 Additional Resources
-
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [React Documentation](https://react.dev/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-
-## 🤝 Support
-
-If you encounter issues during setup:
-
-1. Check the troubleshooting section above
-2. Review the project's README.md
-3. Check GitHub issues for similar problems
-4. Contact the development team
-
----
-
-**Note**: This setup guide assumes you have basic knowledge of command line tools and development environments. If you're new to any of these technologies, consider reviewing their official documentation first.

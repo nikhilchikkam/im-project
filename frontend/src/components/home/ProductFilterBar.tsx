@@ -2,7 +2,7 @@ import React, { useRef, useLayoutEffect, useState } from 'react';
 import type { RefObject } from 'react';
 import { X, Pencil, List, LayoutGrid } from 'lucide-react';
 import GuidelineDropdownPortal from './GuidelineDropdownPortal';
-import Dropdown from '../ui/Dropdown';
+import Dropdown from '../ui/Dropdown.tsx';
 
 interface ProductFilterBarProps {
   searchInput: string;

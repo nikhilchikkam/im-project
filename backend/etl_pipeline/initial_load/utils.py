@@ -9,8 +9,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv('../.env')
-load_dotenv('.env')
+load_dotenv('../../.env')  # backend/.env
 
 def get_spaces_client():
     """Get DigitalOcean Spaces client"""
@@ -56,19 +55,31 @@ def download_excel_from_spaces():
 
 def load_gpc_codes():
     """Load valid GPC codes from Excel file"""
-    excel_file = "family_class_brick.xlsx"
+    # Try multiple paths for the Excel file
+    possible_paths = [
+        "family_class_brick.xlsx",  # Current directory (for backward compatibility)
+        "../reference_files/family_class_brick.xlsx",  # Reference files directory
+        "reference_files/family_class_brick.xlsx",  # Reference files from etl_pipeline
+        "../../reference_files/family_class_brick.xlsx"  # Reference files from initial_load
+    ]
     
-    if not os.path.exists(excel_file):
-        print(f"Excel file not found: {excel_file}")
+    excel_file = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            excel_file = path
+            break
+    
+    if not excel_file:
+        print(f"Excel file not found in any of these locations: {possible_paths}")
         return set()
         
     try:
         df = pd.read_excel(excel_file)
         gpc_codes = set(str(code).strip() for code in df["BrickCode"].dropna().astype(str))
-        print(f"Loaded {len(gpc_codes)} valid GPC codes from Excel file")
+        print(f"Loaded {len(gpc_codes)} valid GPC codes from {excel_file}")
         return gpc_codes
     except Exception as e:
-        print(f"Error loading Excel file: {e}")
+        print(f"Error loading Excel file {excel_file}: {e}")
         return set()
 
 def filter_products_by_gpc(products, valid_gpc_codes):
@@ -85,7 +96,7 @@ def filter_products_by_gpc(products, valid_gpc_codes):
         if gpc_code and gpc_code in valid_gpc_codes:
             filtered_products.append(product)
             
-    print(f"Filtered {len(products)} products: {len(filtered_products)} valid")
+    # Removed verbose logging for performance - filtering completed
     return filtered_products
 
 def get_batch_files_from_spaces(session_id=None):
